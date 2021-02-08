@@ -41,8 +41,7 @@ export class SchemaPortLabel extends React.Component<DefaultPortLabelProps> {
 
 		return (
 			<PortLabel>
-				{this.props.port.getOptions().in ? port : label}
-				{this.props.port.getOptions().in ? label : port}
+				{label}
 			</PortLabel>
 		);
 	}

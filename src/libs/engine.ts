@@ -30,6 +30,7 @@ function GetEngine() : DiagramEngine  {
     snode.addField({fieldName : "Id" , fieldType : "int"})
     
     snode.setPosition(100, 100);
+    /*
     var node1 = new DefaultNodeModel({
 		name: 'Node 1',
 		color: 'rgb(0,192,255)'
@@ -48,8 +49,9 @@ function GetEngine() : DiagramEngine  {
 	let link1 = port1.link<DefaultLinkModel>(port2);
 	link1.getOptions().testName = 'Test';
 	link1.addLabel('Hello World!');
-    
-    const models = model.addAll(node1, node2  , snode , link1);
+    */
+
+    const models = model.addAll(snode );
     
     models.forEach(m => {
         m.registerListener({

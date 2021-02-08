@@ -76,7 +76,7 @@ export class SchemaNodeWidget extends React.Component<DefaultNodeProps> {
 					
 				</Title>
 				<Ports>
-					<PortsContainer>{_.map(this.props.node.getInPorts(), this.generatePort)}</PortsContainer>
+					
 					<PortsContainer>{_.map(this.props.node.getOutPorts(), this.generatePort)}</PortsContainer>
 				</Ports>
 			</Node>
