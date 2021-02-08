@@ -7,6 +7,23 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.diagram-container{
+	background: #333333;
+	width: 100%;
+	height: 100%;
+}
+
+.topmenu{
+  background-color: blue;
+  color : white;
+  
+}
+
+.canvas {
+  width: 80%;
+  height: 100vh;
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
