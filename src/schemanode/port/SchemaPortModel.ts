@@ -22,6 +22,15 @@ export interface SchemaPortModelGenerics extends PortModelGenerics {
 	OPTIONS: SchemaPortModelOptions;
 }
 
+export interface DefaultPortModelOptions extends PortModelOptions {
+	label?: string;
+	in?: boolean;
+}
+
+export interface DefaultPortModelGenerics extends PortModelGenerics {
+	OPTIONS: DefaultPortModelOptions;
+}
+
 export class SchemaPortModel extends PortModel<SchemaPortModelGenerics> {
 	createLinkModel(): DefaultLinkModel  {
 		return new DefaultLinkModel();

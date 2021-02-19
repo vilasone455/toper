@@ -3,9 +3,13 @@ import { DiagramEngine, PortWidget } from '@projectstorm/react-diagrams-core';
 import { SchemaPortModel } from './SchemaPortModel';
 import styled from '@emotion/styled';
 
+import { MenuProvider  } from 'react-contexify';
+
+
 export interface DefaultPortLabelProps {
 	port: SchemaPortModel;
 	engine: DiagramEngine;
+
 }
 
 
@@ -13,6 +17,9 @@ export interface DefaultPortLabelProps {
 		display: flex;
 		margin-top: 1px;
 		align-items: center;
+		&:hover {
+			background: rgb(192, 255, 0);
+		}
 	`;
 
 	export const Label = styled.div`
@@ -21,8 +28,8 @@ export interface DefaultPortLabelProps {
 	`;
 
 	export const Port = styled.div`
-		width: 10px;
-		height: 10px;
+		width: 16px;
+		height: 21px;
 		background: rgba(255, 255, 244, 0.1);
 		&:hover {
 			background: rgb(192, 255, 0);
@@ -40,9 +47,13 @@ export class SchemaPortLabel extends React.Component<DefaultPortLabelProps> {
 		const label = <Label>{this.props.port.getOptions().label}</Label>;
 
 		return (
-			<PortLabel>
-				{label}
-			</PortLabel>
+			<MenuProvider id="nodeedit" storeRef={false} >
+				<PortLabel>
+				{this.props.port.getOptions().in ? port : label}
+				{this.props.port.getOptions().in ? label : port}
+				</PortLabel>
+			</MenuProvider>
+			
 		);
 	}
 }

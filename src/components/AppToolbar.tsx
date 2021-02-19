@@ -13,10 +13,14 @@ const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
       flexGrow: 1,
+
     },
     title: {
       flexGrow: 1,
 
+    },
+    menu : {
+        marginRight : 10
     },
     menuButton: {
       marginRight: theme.spacing(2),
@@ -24,29 +28,37 @@ const useStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-export const NavEditor: FunctionComponent = () => {
+interface ToolbarFunction {
+  onExport : () => void,
+
+}
+
+export const AppToolbar: FunctionComponent<ToolbarFunction> = ({onExport }) => {
   const classes = useStyles();
 
   return (
     <div className={classes.root}>
-      <AppBar position="static" style={{ background: '#313A43' }}>
-        <Toolbar variant="dense">
-          <IconButton edge="start" className={classes.menuButton} color="inherit" aria-label="menu">
-            <MenuIcon />
-          </IconButton>
+      <div style={{height : 30,marginLeft : 20 }}>
+ 
           <Typography variant="h6" color="inherit" >
             Visual Draw
             
           </Typography>
-          <Divider orientation="vertical" flexItem style={{marginLeft:20 , color: '#FFFF'}} />
-          <Button style={{ color: '#FFFF' }}>File</Button>
-          <Button style={{ color: '#FFFF' }}>Export</Button>
-          <Button style={{ color: '#FFFF' }}> Print</Button>
-          <Button style={{ color: '#FFFF' }}>Help</Button>
+          
+      </div>
+      <div style={{height : 40}}>
+ 
+          
+      <Button>File</Button>
+          <Button onClick={onExport}>Export</Button>
+          <Button> Print</Button>
+          <Button>Help</Button>
           <Typography className={classes.title}></Typography>
-          <Button variant="contained" color="primary">Login</Button>
-        </Toolbar>
-      </AppBar>
+
+          
+   
+      </div>
+  
     </div>
   );
 }

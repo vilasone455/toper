@@ -10,6 +10,14 @@ export interface DemoCanvasWidgetProps {
 	background?: string;
 }
 
+export const CT = styled.div<{ color: string; background: string }>`
+display : flex;
+justify-content: center;
+background-color: ${(p) => p.background};
+
+
+`;
+
 	export const Container = styled.div<{ color: string; background: string }>`
 
 		background-color: ${(p) => p.background};
@@ -47,11 +55,11 @@ export class DemoCanvasWidget extends React.Component<DemoCanvasWidgetProps> {
 	render() {
 		//console.log(this.schemax)
 		return (
-			<Container
+			<CT id="diagramcv"
 				background={this.props.background || 'rgb(60, 60, 60)'}
 				color={this.props.color || 'rgba(255,255,255, 0.05)'}>
 				{this.props.children}
-			</Container>
+			</CT>
 		);
 	}
 }

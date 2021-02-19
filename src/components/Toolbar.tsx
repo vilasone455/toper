@@ -1,4 +1,4 @@
-import React from 'react';
+import React , {FunctionComponent} from 'react';
 import { makeStyles, Theme, createStyles } from '@material-ui/core/styles';
 import Redo from '@material-ui/icons/Redo';
 import Undo from '@material-ui/icons/Undo';
@@ -20,13 +20,18 @@ import Select from '@material-ui/core/Select';
 import SelectInput from '@material-ui/core/Select/SelectInput';
 
 
+import { useDispatch , useSelector } from "react-redux"
+
+
+
+
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     root: {
 
       border: `1px solid ${theme.palette.divider}`,
       borderRadius: theme.shape.borderRadius,
-      backgroundColor: theme.palette.background.paper,
+      backgroundColor: '#F1F1F1',
       color: theme.palette.text.secondary,
       '& svg': {
         margin: theme.spacing(1.0),
@@ -38,13 +43,23 @@ const useStyles = makeStyles((theme: Theme) =>
   }),
 );
 
-export default function VerticalDividers() {
+interface ToolbarFunction{
+  onZoomIn : () => void,
+  onZoomOut : () => void,
+  onZoomFit : () => void,
+  onSave : () => void,
+  onLoad : () => void,
+  newTable: () => void
+}
+
+export const Toolbar: FunctionComponent<ToolbarFunction> = ({onSave , onLoad , onZoomIn , onZoomOut , onZoomFit , newTable }) => {
+
   const classes = useStyles();
 
   return (
     <div>
       <Grid container alignItems="center" className={classes.root}>
-          <TableChartIcon></TableChartIcon>
+          <TableChartIcon onClick={newTable}></TableChartIcon>
           <LaunchIcon></LaunchIcon>
           <FileCopy></FileCopy>
           <PrintIcon></PrintIcon>
@@ -57,11 +72,12 @@ export default function VerticalDividers() {
           <MenuItem value={"75%"}>75%</MenuItem>
           <MenuItem value={"100%"}>100%</MenuItem>
         </Select>
-        <ZoomInIcon />
-        <ZoomOutIcon />
+        <ZoomInIcon onClick={onZoomIn} />
+        <ZoomOutIcon  onClick={onZoomOut}/>
+        <ZoomOutIcon  onClick={onZoomFit}/>
         <Divider orientation="vertical" flexItem />
-        <BookmarksIcon></BookmarksIcon>
-        <DeleteIcon></DeleteIcon>
+        <BookmarksIcon onClick={onSave}></BookmarksIcon>
+        <DeleteIcon onClick={onLoad}></DeleteIcon>
       </Grid>
     </div>
   );

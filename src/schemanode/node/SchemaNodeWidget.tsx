@@ -6,35 +6,48 @@ import { SchemaPortLabel } from '../port/SchemaPortLabelWidget';
 import styled from '@emotion/styled';
 import { css } from '@emotion/core';
 import { SchemaPortModel } from '../port/SchemaPortModel';
-import { Button } from '@material-ui/core';
 
+import IconButton from '@material-ui/core/IconButton';
+
+
+import DeleteOutlineIcon from '@material-ui/icons/DeleteOutline';
 
 	export const Node = styled.div<{ background ?: string; selected: boolean }>`
-		background-color: ${(p) => p.background};
-		border-radius: 5px;
-		font-family: sans-serif;
+	
+	
+
+		border-style: solid;
+
+		border-color : grey;
+
+		border-width: thin;
+
 		color: white;
-		border: solid 2px black;
+		
 		overflow: visible;
-		font-size: 11px;
-		border: solid 2px ${(p) => (p.selected ? 'rgb(0,192,255)' : 'black')};
+		font-size: 13px;
+		
 	`;
 
 	export const Title = styled.div`
-		background: rgba(0, 0, 0, 0.3);
+		background-color: #005AA0;
 		display: flex;
+		font-weight: 600;
 		white-space: nowrap;
 		justify-items: center;
 	`;
 
 	export const TitleName = styled.div`
+		margin-left : 10px;
 		flex-grow: 1;
-		padding: 5px 5px;
+		padding: 10px 5px;
 	`;
 
 	export const Ports = styled.div`
 		display: flex;
-		background-image: linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.2));
+		color : #5E666E;
+		font-weight: 600;
+		background-color: white;
 	`;
 
 	export const PortsContainer = styled.div`
@@ -60,23 +73,74 @@ export interface DefaultNodeProps {
  * for both all the input ports on the left, and the output ports on the right.
  */
 
+
 export class SchemaNodeWidget extends React.Component<DefaultNodeProps> {
+
+
+	componentDidUpdate(prevProps : DefaultNodeProps) {
+		// Typical usage (don't forget to compare props):
+		
+		//alert('com update')
+
+		if(prevProps == this.props){
+			//alert('some')
+		}else{
+			//alert('new')
+			
+		}
+
+	  }
+
+	  fireAction (event : any) {
+		this.props.engine.getActionEventBus().fireAction({
+		  event: {
+			...event,
+			key: '',
+			preventDefault: () => {},
+          stopPropagation: () => {},
+		  },
+		});
+	  }
+
+	  fireDeleteEvent(engine : DiagramEngine){
+		let e = { type: 'keydown', ctrlKey: true, code: 'Delete' }
+		this.fireAction(e);
+	  }
+
+	fireDoubleClick(engine : DiagramEngine){
+		console.log("double click")
+		if(engine != undefined){
+	
+			engine.fireEvent({ }, 'onDoubleClick');
+		}else{
+			console.log("unid")
+		}
+		
+	}
+
+
 	generatePort = (port : SchemaPortModel) => {
-		return <SchemaPortLabel engine={this.props.engine} port={port} key={port.getID()} />;
+	
+		return <SchemaPortLabel engine={this.props.engine} port={port} key={port.getID()}  />;
 	};
+
+
 
 	render() {
 		return (
 			<Node
 				data-default-node-name={this.props.node.getOptions().name}
 				selected={this.props.node.isSelected()}
-				background={this.props.node.getOptions().color}>
+				background={this.props.node.getOptions().color} onDoubleClick={() => this.fireDoubleClick(this.props.engine)}>
 				<Title>
 					<TitleName>{this.props.node.getOptions().name}</TitleName>
-					
+					<IconButton  onClick={()=> this.fireDeleteEvent(this.props.engine)} color="inherit" size="small">
+          				<DeleteOutlineIcon/>
+        			</IconButton>
+
 				</Title>
 				<Ports>
-					
+					<PortsContainer>{_.map(this.props.node.getInPorts(), this.generatePort)}</PortsContainer>
 					<PortsContainer>{_.map(this.props.node.getOutPorts(), this.generatePort)}</PortsContainer>
 				</Ports>
 			</Node>

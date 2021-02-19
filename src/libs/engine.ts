@@ -1,35 +1,53 @@
-import createEngine, { DefaultLinkModel, DefaultNodeModel , DiagramEngine,  DiagramModel } from "@projectstorm/react-diagrams";
-import { useDispatch } from "react-redux";
-import {ToggleEditor} from './schemaEditorReducer'
-import {OpenEditor} from './tablereducer'
-import {TSCustomNodeModel} from '../custom-node-ts/TSCustomNodeModel'
+import createEngine, { DefaultLinkModel, DefaultNodeModel , DiagramEngine,  DiagramModel , PathFindingLinkFactory } from "@projectstorm/react-diagrams";
+
+
 import {SchemaNodeModel} from '../schemanode/node/SchemaNodeModel'
 import {SchemaNodeFactory} from '../schemanode/node/SchemaNodeFactory'
-import store from '../store.js'
+
 
 function GetEngine() : DiagramEngine  {
  
-    let rs = createEngine()
-
+    let rs = createEngine({registerDefaultDeleteItemsAction: false,
+})
 
     rs.getNodeFactories().registerFactory(new SchemaNodeFactory());
 
 
-    console.log("create engine")
     const model = new DiagramModel();
 
-    let cnode = new TSCustomNodeModel({color : 'rgb(192,255,0)'})
-    
-    cnode.setPosition(200, 100);
 
-    
     let snode =  new SchemaNodeModel({
-		name: 'Node 1',
+		name: 'Product',
 		color: 'rgb(0,192,255)'
 	});
-    snode.addField({fieldName : "Id" , fieldType : "int"})
-    
+
+    let productIdPort = snode.addField({fieldName : "Id" , fieldType : "int"})
+    snode.addField({fieldName : "ProductName" , fieldType : "varchar"})
+    let pnameport = snode.addField({fieldName : "ProductPrice" , fieldType : "int"})
+    snode.addField({fieldName : "ProductCategory" , fieldType : "int"})
+
     snode.setPosition(100, 100);
+
+
+
+
+    const models = model.addAll(snode);
+
+    //snode2.addLinkForeignKey(link1.getID())
+    
+    models.forEach(m => {
+        m.registerListener({
+            
+			selectionChanged: () => onclick(m.getID()),
+            onDoubleClick : () => ondbclick(m.getID())
+		});
+
+    });
+
+    
+
+	
+
     /*
     var node1 = new DefaultNodeModel({
 		name: 'Node 1',
@@ -50,20 +68,16 @@ function GetEngine() : DiagramEngine  {
 	link1.getOptions().testName = 'Test';
 	link1.addLabel('Hello World!');
     */
-
-    const models = model.addAll(snode );
     
-    models.forEach(m => {
-        m.registerListener({
-			selectionChanged: () => onclick(m.getID())
-		});
 
-    });
-    
     rs.setModel(model);
 
-
+   
     return rs
+}
+
+function ondbclick(id : string){
+    alert('double')
 }
 
 function onclick(id : String){
@@ -72,8 +86,8 @@ function onclick(id : String){
     //dispatch(ToggleEditor())
     //store.dispatch(ToggleEditor())
     console.log(id)
-    store.dispatch(OpenEditor(false))
+   
 }
 
 const engine = GetEngine()
-export {engine}
+export {engine , GetEngine}
