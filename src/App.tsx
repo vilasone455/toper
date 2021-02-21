@@ -21,12 +21,38 @@ import { TableEditor } from './components/TableEditor'
 
 import SimpleContext from './components/ContextMenus/SimpleContext'
 import * as htmlToImage from 'html-to-image';
+import BaseGenerate from './api/export/BaseGenerate';
+import MySqlGenerate from './api/export/MySqlGenerate';
+
+import {getAllTable} from './libs/tableUtil'
+import { v4 as uuidv4 } from 'uuid';
+enum VisibleStatus {
+	Public,
+	Private,
+	Protected
+}
+
+interface Project{
+	projectId ?: string,
+	projectName : string,
+	projectDescription : string,
+	createAt ?: string,
+	updateAt ?: string,
+	visibleStatus : VisibleStatus,
+	shareUrl ?: string  ,
+	userId : string,
+	projectDetail : any
+}
 
 export const App: FunctionComponent = () => {
 
 	const [update, setupdate] = useState(false)
 
 	const [diagram, setDiagram] = useState(new DiagramController())
+
+	const [currentUserId, setcurrentUserId] = useState("")
+
+	const [currentProject, setcurrentProject] = useState(initProject())
 
 	const [isExportOpen, setisExportOpen] = useState(false)
 
@@ -35,14 +61,12 @@ export const App: FunctionComponent = () => {
 	const [isEdit, setEdit] = useState(false)
 
 	useEffect(() => {
-		console.log('start app')
 		diagram.getEngine().registerListener({
 			onDoubleClick: () => ToggleEditor()
 		})
 	}, [])
 
 	function exportPng() {
-
 		let node = document.getElementById('diagramcv');
 		if (node == null) return
 		htmlToImage.toPng(node)
@@ -60,41 +84,23 @@ export const App: FunctionComponent = () => {
 			});
 	}
 
-	function exportPdf() {
-
-		let node = document.getElementById('diagramcv');
-		if (node == null) return
-		htmlToImage.toPng(node)
-			.then(function (dataUrl) {
-				var img = new Image();
-				img.src = dataUrl;
-				var a = document.createElement('a');
-				// toDataURL defaults to png, so we need to request a jpeg, then convert for file download.
-				a.href = dataUrl
-				a.download = 'somefilename.png';
-				a.click();
-			})
-			.catch(function (error) {
-				console.error('oops, something went wrong!', error);
-			});
+	function initProject() : Project{
+		let pid = uuidv4()
+		let project : Project = {
+			projectId : pid,
+			projectName : "Project",
+			projectDescription : "",
+			visibleStatus : VisibleStatus.Private,
+			userId : currentUserId,
+			projectDetail : {}
+		}
+		return project
 	}
 
 	function openExport() { setisExportOpen(true) }
 
 	function ToggleEditor() {
 		setEdit(!isEdit)
-	}
-
-	function onZoomIn() {
-		alert('zoom in ')
-		//diagram.zoomIn({})
-		//diagram.getEngine().
-	}
-
-	function onZoomOut() {
-		alert('zoom out ')
-
-		//diagram.zoomIn({})
 	}
 
 	function onZoomFit() {
@@ -111,28 +117,24 @@ export const App: FunctionComponent = () => {
 
 		let modelStr = JSON.stringify(modelJson)
 
+		//new code
+		let rs : Project = {
+			projectName : "topss",
+			projectDescription : "......",
+			visibleStatus : VisibleStatus.Private,
+			userId : "",
+			projectDetail : modelJson
+		}
+
 		setsaveData(modelStr)
 
 		console.log(modelJson)
 
-		var a = document.createElement('a');
-		// toDataURL defaults to png, so we need to request a jpeg, then convert for file download.
-		a.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(modelStr));
-		a.setAttribute('download', "myer.er");
-
-		a.style.display = 'none';
-		document.body.appendChild(a);
-
-		a.click();
-
-		document.body.removeChild(a);
+		downloadFile("someer.er" , modelStr)
+		//new code
+		downloadFile(rs.projectName + ".er" , JSON.stringify(rs))
 	}
 
-
-
-	function testLink() {
-		diagram.linktest()
-	}
 
 	function loadOpenFile() {
 		var elem = document.getElementById("fileinput");
@@ -187,24 +189,52 @@ export const App: FunctionComponent = () => {
 		setupdate(!update)
 	}
 
+	function downloadFile(fileName : string , content : string){
+		var a = document.createElement('a');
+		// toDataURL defaults to png, so we need to request a jpeg, then convert for file download.
+		a.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
+		a.setAttribute('download', fileName);
+
+		a.style.display = 'none';
+		document.body.appendChild(a);
+
+		a.click();
+
+		document.body.removeChild(a);
+	}
+
+	function exportSelect(codeGen : BaseGenerate){
+		let tbs = getAllTable(diagram)
+		//alert(JSON.stringify(tbs))
+		let str = codeGen.export(tbs)
+		alert(str)
+
+		downloadFile("ecom.sql" , str)
+	}
+
+	function exportSql(){exportSelect(new MySqlGenerate())}
+
 	function zoomIn() {diagram.doZoom(20)}
 
 	function zoomOut() {diagram.doZoom(-20)}
 
+	function testEx(e : string){alert(e)}
+
 	return (
 		<React.Fragment>
 
-			<AppToolbar onExport={openExport}></AppToolbar>
+			<AppToolbar onExport={openExport}/>
 			<Toolbar onZoomIn={zoomIn}
 				onZoomOut={zoomOut} onZoomFit={loadOpenFile} newTable={newTable} onSave={saveSerial} 
 				onLoad={loadOpenFile} />
-			<ExportEditor isOpen={isExportOpen}
-				onclose={() => setisExportOpen(false)}
-				exportPng={exportPng} exportPdf={exportPdf}></ExportEditor>
-			<input type="file" id="fileinput" style={{ display: "none" }} onChange={onLoadFile}></input>
-			<FileMenu isOpen={true}></FileMenu>
-			<TableEditor isOpen={isEdit} diagramctr={diagram} onclose={ToggleEditor}
-				forceUpdate={update}></TableEditor>
+			<ExportEditor 
+				isOpen={isExportOpen} onclose={() => setisExportOpen(false)} exportTest={testEx}
+				exportPng={exportPng} exportPdf={exportPng} exportSql={exportSql} fileName={currentProject.projectName}
+			/>
+			<input type="file" id="fileinput" style={{ display: "none" }} onChange={onLoadFile}/>
+			<FileMenu isOpen={true}/>
+			<TableEditor isOpen={isEdit} diagramctr={diagram} 
+			onclose={ToggleEditor} forceUpdate={update}/>
 
 			<MenuProvider id="diagram" storeRef={false} >
 				<DemoCanvasWidget background="#E9E9E9" color="#808080" >
@@ -215,8 +245,8 @@ export const App: FunctionComponent = () => {
 			<SimpleContext  />
 
 			<ContextMenus copyFunc={diagram.copySelected} pasteFunc={diagram.pasteSelected} deleteFunc={diagram.deleteSelected}
-				duplicateFunc={diagram.duplicateSelected} cutFunc={diagram.cutSelected} 
-				zoomIn={zoomIn} zoomOut={zoomOut}></ContextMenus>
+			duplicateFunc={diagram.duplicateSelected} cutFunc={diagram.cutSelected} 
+			zoomIn={zoomIn} zoomOut={zoomOut}/>
 
 		</React.Fragment>
 

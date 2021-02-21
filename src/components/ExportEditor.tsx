@@ -1,14 +1,6 @@
-import React, { FunctionComponent } from 'react'
+import React, { FunctionComponent, useState } from 'react'
 import Drawer from '@material-ui/core/Drawer';
-import clsx from 'clsx';
-import TableMat from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableContainer from '@material-ui/core/TableContainer';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import { makeStyles } from '@material-ui/core/styles';
-import classes from '*.module.css';
+
 import styled from '@emotion/styled';
 import IconButton from '@material-ui/core/IconButton';
 
@@ -17,15 +9,16 @@ import Divider from '@material-ui/core/Divider';
 import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 
-export interface TableEditorProp{
-    isOpen : boolean,
-    onclose : () => void
+//mongodb+srv://topster:<password>@cluster0.hbfnd.mongodb.net/myFirstDatabase?retryWrites=true&w=majority
+//aaebaYCK6opQGeRA
+
+export interface TableEditorProp {
+  isOpen: boolean,
+  onclose: () => void
 }
 
 
-
-
-  export const LEFT = styled.div<{}>`
+export const LEFT = styled.div<{}>`
 width : 30%;
 height: 100vh;
 color : white;
@@ -48,7 +41,7 @@ font-size : 15px;
 margin : 8px;
 
 `;
-  
+
 
 export const Right = styled.div<{}>`
 width : 70%;
@@ -59,69 +52,115 @@ font-size : 20px;
 `;
 
 
-interface ExportFunctions {
-  isOpen : boolean,
-  onclose : () => void,
-  exportPng : () => void,
-  exportPdf : () => void
+
+
+export const SqlExport: FunctionComponent<ExportSqlProp> = ({ code, fileName, isRender, onDownloadClick }) => {
+  if (!isRender) {
+    return (<div></div>)
+  } else {
+    return (
+      <div>
+        <div>Export sql</div>
+        <TextField label="file name" variant="filled" value={fileName} />
+        <TextField label="Filled" variant="filled" multiline
+          rowsMax={20} style={{ marginTop: 20, width: "100%", height: 400 }} value={code} />
+        <Button variant="outlined" color="primary" style={{ marginRight: 10 }}>Copy</Button>
+        <Button variant="contained" color="primary" onClick={onDownloadClick} >Download</Button>
+      </div>
+    )
+  }
+}
+
+export const ImageExport: FunctionComponent<ExportImageProp> = ({ fileName, isRender, imageType, onDownloadClick }) => {
+  if (!isRender) {
+    return (<div></div>)
+  } else {
+    return (
+      <div>
+        <div>Export Image</div>
+        <TextField label="file name" variant="filled" value={fileName} />
+
+        <Button variant="contained" color="primary" onClick={onDownloadClick}  >Download</Button>
+      </div>
+    )
+  }
+}
+
+enum MenuEnum {
+  Image,
+  MySql,
+  SqlServer,
+  Postresql,
+  Laravel
 }
 
 
-export class ExportEditor extends React.Component<ExportFunctions> {
+interface ExportProp {
+  isOpen: boolean,
+  fileName : string,
+  onclose: () => void,
+  exportPng: () => void,
+  exportPdf: () => void,
+  exportSql: () => void,
+  exportTest : (a : string) => void
+}
 
-    
+interface ExportEvent {
+  onclose: () => void,
+  exportPng: () => void,
+  exportPdf: () => void,
+  exportSql: () => void
+}
 
-    render() {
-        const r = `Create Table Product (
-                id int;
-                ProdutName varchar;
-                ProductPrice int;
-                Category int;
-                Primary key id
-            )
-            
-            //////////////////////////
+interface MenuExport {
+  isRender: boolean,
+  fileName: string,
+  onDownloadClick: () => void
+}
 
-            Create Table ProductImage (
-                id int;
-                ProductId int
-                ImageUrl varchar
-                Primary key id
-            )
-        `
-        return (
-            <Drawer anchor={"right"} open={this.props.isOpen} style={{width : 400}} onClose={this.props.onclose}>
-               <div
-      style={{width : 500 , display : "flex"}}
-      role="presentation"
+interface ExportImageProp extends MenuExport {
+  imageType: string
+}
+
+interface ExportSqlProp extends MenuExport {
+  code: string,
+}
+
+export const ExportEditor: FunctionComponent<ExportProp> = ({ isOpen, onclose, exportPng,  exportSql , exportTest , fileName}) => {
+
+  const [currentMenu, setcurrentMenu] = useState(MenuEnum.Image)
+
+  const [currentFileName, setcurrentFileName] = useState("")
+
+  return (
+
+    <Drawer anchor={"right"} open={isOpen} style={{ width: 400 }} onClose={onclose}>
+      <div
+        style={{ width: 500, display: "flex" }}
+        role="presentation"
         className=""
-    >
-   
-      <LEFT>
-          <IconButton color="inherit" size="medium"><HighlightOffIcon></HighlightOffIcon></IconButton>
-        <MenuList>
-            <Menu>Sql</Menu>
-            <Menu onClick={this.props.exportPng}>Image</Menu>
-            <Menu onClick={this.props.exportPdf}>Pdf</Menu>
+      >
 
-            <Divider style={{marginTop:10,color : "white"}} light={true}></Divider>
+        <LEFT>
+          <IconButton color="inherit" size="medium"><HighlightOffIcon></HighlightOffIcon></IconButton>
+          <MenuList>
+            <Menu onClick={() => setcurrentMenu(MenuEnum.MySql)}>Sql</Menu>
+            <Menu onClick={() => setcurrentMenu(MenuEnum.Image)}>Image</Menu>
+            <Menu onClick={() => exportTest('filename test')}>Pdf</Menu>
+
+            <Divider style={{ marginTop: 10, color: "white" }} light={true}></Divider>
 
             <Menu>Laravel</Menu>
             <Menu>Golang Gin</Menu>
 
-        </MenuList>
-      </LEFT>
-      <Right>
-        <div>Export sql</div>
-        <TextField label="Filled" variant="filled" multiline
-          rowsMax={20} style={{marginTop:20,width:"100%",height:400}} value={r}></TextField>
+          </MenuList>
+        </LEFT>
+        <Right>
+          <SqlExport isRender={currentMenu == MenuEnum.MySql} code={""} fileName={currentFileName} onDownloadClick={exportSql} />
+          <ImageExport isRender={currentMenu == MenuEnum.Image} imageType="png" fileName={currentFileName} onDownloadClick={exportPng} />
+        </Right>
 
-          <Button variant="outlined" color="primary" style={{marginRight:10}}>Copy</Button>
-          <Button variant="contained" color="primary" >Download</Button>
-      </Right>
-
-    </div>
-            </Drawer>
-        )
-    }
+      </div>
+    </Drawer>
+  )
 }

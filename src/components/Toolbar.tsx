@@ -4,9 +4,6 @@ import Redo from '@material-ui/icons/Redo';
 import Undo from '@material-ui/icons/Undo';
 import FileCopy from '@material-ui/icons/FileCopy';
 import MenuItem from '@material-ui/core/MenuItem';
-import FormatBoldIcon from '@material-ui/icons/FormatBold';
-import FormatItalicIcon from '@material-ui/icons/FormatItalic';
-import FormatUnderlinedIcon from '@material-ui/icons/FormatUnderlined';
 import Grid from '@material-ui/core/Grid';
 import Divider from '@material-ui/core/Divider';
 import LaunchIcon from '@material-ui/icons/Launch';
@@ -17,12 +14,6 @@ import BookmarksIcon from '@material-ui/icons/Bookmarks';
 import DeleteIcon from '@material-ui/icons/Delete';
 import TableChartIcon from '@material-ui/icons/TableChart';
 import Select from '@material-ui/core/Select';
-import SelectInput from '@material-ui/core/Select/SelectInput';
-
-
-import { useDispatch , useSelector } from "react-redux"
-
-
 
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -59,6 +50,7 @@ export const Toolbar: FunctionComponent<ToolbarFunction> = ({onSave , onLoad , o
   return (
     <div>
       <Grid container alignItems="center" className={classes.root}>
+        
           <TableChartIcon onClick={newTable}></TableChartIcon>
           <LaunchIcon></LaunchIcon>
           <FileCopy></FileCopy>

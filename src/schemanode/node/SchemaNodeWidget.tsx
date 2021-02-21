@@ -77,20 +77,6 @@ export interface DefaultNodeProps {
 export class SchemaNodeWidget extends React.Component<DefaultNodeProps> {
 
 
-	componentDidUpdate(prevProps : DefaultNodeProps) {
-		// Typical usage (don't forget to compare props):
-		
-		//alert('com update')
-
-		if(prevProps == this.props){
-			//alert('some')
-		}else{
-			//alert('new')
-			
-		}
-
-	  }
-
 	  fireAction (event : any) {
 		this.props.engine.getActionEventBus().fireAction({
 		  event: {
