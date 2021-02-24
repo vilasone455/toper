@@ -77,9 +77,9 @@ export class SchemaNodeModel extends NodeModel<SchemaNodeModelGenerics> {
 
 		let fieldIndex = this.fieldOptions.findIndex(f=>f.portId == id)
 
-		if(indexof == -1) return
+		if(indexof === -1) return
 
-		if(fieldIndex != -1){
+		if(fieldIndex !== -1){
 			this.fieldOptions.splice(fieldIndex, 1);
 		}
 
@@ -101,10 +101,10 @@ export class SchemaNodeModel extends NodeModel<SchemaNodeModelGenerics> {
 		let fields_tb = tb.fields
 		let fields = this.getAllField()
 		for (let i = 0; i < fields_tb.length; i++) {
-			if(fields[i].fieldName != fields_tb[i].fieldName){
+			if(fields[i].fieldName !== fields_tb[i].fieldName){
 				this.portsIn[i].getOptions().label = fields_tb[i].fieldName
 			}
-			if(fields[i].fieldType != fields_tb[i].fieldType){
+			if(fields[i].fieldType !== fields_tb[i].fieldType){
 				this.portsOut[i].getOptions().label = fields_tb[i].fieldType
 			}
 		}
@@ -148,10 +148,10 @@ export class SchemaNodeModel extends NodeModel<SchemaNodeModelGenerics> {
 	}
 
 	addOrUpdateFieldOption(field : Field)  : void{
-		let fieldIndex = this.fieldOptions.findIndex(f=>f.portId == field.inId)
-		if(fieldIndex == -1) return
+		let fieldIndex = this.fieldOptions.findIndex(f=>f.portId === field.inId)
+		if(fieldIndex === -1) return
 		
-		if(field.fieldOption == undefined) return 
+		if(field.fieldOption === undefined) return 
 		this.fieldOptions[fieldIndex] = field.fieldOption
 		console.log(field.fieldOption)
 
@@ -159,9 +159,9 @@ export class SchemaNodeModel extends NodeModel<SchemaNodeModelGenerics> {
 		let fieldOption = field.fieldOption
 		if(fieldOption == undefined) return
 		
-		let targetNodeId = (fieldOption.fkTb == undefined) ? "" : fieldOption.fkTb
-		let targetPortId = (fieldOption.fkField == undefined) ? "" : fieldOption.fkField
-		let sourceIdPort = (field.inId == undefined) ? "" : field.inId
+		let targetNodeId = (fieldOption.fkTb === undefined) ? "" : fieldOption.fkTb
+		let targetPortId = (fieldOption.fkField === undefined) ? "" : fieldOption.fkField
+		let sourceIdPort = (field.inId === undefined) ? "" : field.inId
 		
 		//this.linkForeignKey(targetNodeId , targetPortId ,  sourceIdPort)
 	}
@@ -170,8 +170,8 @@ export class SchemaNodeModel extends NodeModel<SchemaNodeModelGenerics> {
 		alert('do link')
 		let targetPort = targetNode.getPortFromID(targetIdPort) as DefaultPortModel
 		let sourceport = this.getPortFromID(sourceInIdPort)  as DefaultPortModel  // find  sourePort
-		if(sourceport == null) return undefined
-		if(targetPort == null) return undefined
+		if(sourceport === null) return undefined
+		if(targetPort === null) return undefined
 		alert('complete link')
 		console.log("main field " + sourceport.getOptions().label + " link with : " + targetPort.getOptions().label)
 		console.log(sourceport.getOptions().in)
@@ -208,11 +208,11 @@ export class SchemaNodeModel extends NodeModel<SchemaNodeModelGenerics> {
 		let id = this.portsIn[index].getID()
 		console.log("check id : " + id)
 		
-		let fieldOptionIndex = this.fieldOptions.findIndex(f=>f.portId == id)
+		let fieldOptionIndex = this.fieldOptions.findIndex(f=>f.portId === id)
 
 		console.log("fieldopt index : " + fieldOptionIndex)
 
-		if(fieldOptionIndex == -1){
+		if(fieldOptionIndex === -1){
 			let r : Field = {
 				inId : '',
 			outId : '',
@@ -226,8 +226,8 @@ export class SchemaNodeModel extends NodeModel<SchemaNodeModelGenerics> {
 		let fieldOption = this.fieldOptions[fieldOptionIndex]
 		console.log("field name : " + field + " pk : " + fieldOption.pk + " fk : " + fieldOption.fk)
 
-		if(field == undefined) field = ""
-		if(type == undefined) type = ""
+		if(field === undefined) field = ""
+		if(type === undefined) type = ""
 
 		
 		let rs : Field = {
@@ -331,9 +331,9 @@ export class SchemaNodeModel extends NodeModel<SchemaNodeModelGenerics> {
 
 		for (let i = 0; i < this.portsIn.length; i++) {
 			
-			let fieldOptionIndex = this.fieldOptions.findIndex(f=>f.portId == this.portsIn[i].getID())
+			let fieldOptionIndex = this.fieldOptions.findIndex(f=>f.portId === this.portsIn[i].getID())
 			console.log("fieldOptIndex : " + fieldOptionIndex)
-			if(fieldOptionIndex == -1) continue
+			if(fieldOptionIndex === -1) continue
 			fields.push({
 				portId : this.portsIn[i].getID(),
 				fieldName : this.portsIn[i].getOptions().label,
@@ -363,8 +363,8 @@ export class SchemaNodeModel extends NodeModel<SchemaNodeModelGenerics> {
 		
 		let fields = []
 		for (let i = 0; i < this.portsIn.length; i++) {
-			let fieldOptionIndex = this.fieldOptions.findIndex(f=>f.portId == this.portsIn[i].getID())
-			if(fieldOptionIndex == -1) continue
+			let fieldOptionIndex = this.fieldOptions.findIndex(f=>f.portId === this.portsIn[i].getID())
+			if(fieldOptionIndex === -1) continue
 			let field = {
 				fieldName : this.portsIn[i].getOptions().label,
 				fieldType : this.portsOut[i].getOptions().label,

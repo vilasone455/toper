@@ -11,10 +11,10 @@ import { AppToolbar } from './components/AppToolbar'
 import {  DiagramModel } from "@projectstorm/react-diagrams";
 
 import { ExportEditor } from './components/ExportEditor'
-import { FileMenu } from './components/FileMenu'
+import {FileMenu}  from './components/FileMenu'
 
 import { ContextMenus } from './components/ContextMenus/ContextMenus'
-import { Menu, MenuProvider } from 'react-contexify';
+import { MenuProvider } from 'react-contexify';
 
 import { DiagramController } from './DiagramController/DiagramCtr'
 import { TableEditor } from './components/TableEditor'
@@ -26,6 +26,13 @@ import MySqlGenerate from './api/export/MySqlGenerate';
 
 import {getAllTable} from './libs/tableUtil'
 import { v4 as uuidv4 } from 'uuid';
+
+import Cookies from 'js-cookie'
+
+import axios from 'axios'
+
+import {User , defaultUser} from './interface/user'
+
 enum VisibleStatus {
 	Public,
 	Private,
@@ -46,9 +53,13 @@ interface Project{
 
 export const App: FunctionComponent = () => {
 
+	const [user, setuser] = useState(defaultUser())
+
 	const [update, setupdate] = useState(false)
 
 	const [diagram, setDiagram] = useState(new DiagramController())
+
+	const [toggleFileMenu, settoggleFileMenu] = useState(true)
 
 	const [currentUserId, setcurrentUserId] = useState("")
 
@@ -64,9 +75,42 @@ export const App: FunctionComponent = () => {
 		diagram.getEngine().registerListener({
 			onDoubleClick: () => ToggleEditor()
 		})
+		isLogin()
 	}, [])
 
-	function exportPng() {
+	function isLogin(){
+		let token = Cookies.get("ertoken")
+		if(token === undefined || token === "") {
+			//show login
+		}else{
+			
+		}
+	}
+
+	const onLogin = (userName : string , userPassword : string) => {
+		let url = "localhost:8080/auth/login"
+		alert('on login' + userName + userPassword)
+		/*
+		axios.post(url , {userName , userPassword}).then(rs=>{
+			if(rs.status == 200){
+				if(rs.data.access_token !== ""){
+					let data = rs.data
+					let userdata : User = {
+						Id : data.id,
+						UserName : data.userName,
+						UserLastName : data.userLastname,
+						UserEmail : data.userEmail,
+						UserPassword : userPassword
+					}
+					setuser(userdata)
+					Cookies.set("ertoken" , rs.data.access_token)
+				}
+			}
+		})
+		*/
+	}
+
+	function exportPng(filename : string) {
 		let node = document.getElementById('diagramcv');
 		if (node == null) return
 		htmlToImage.toPng(node)
@@ -76,7 +120,7 @@ export const App: FunctionComponent = () => {
 				var a = document.createElement('a');
 				// toDataURL defaults to png, so we need to request a jpeg, then convert for file download.
 				a.href = dataUrl
-				a.download = 'somefilename.png';
+				a.download = filename;
 				a.click();
 			})
 			.catch(function (error) {
@@ -92,7 +136,7 @@ export const App: FunctionComponent = () => {
 			projectDescription : "",
 			visibleStatus : VisibleStatus.Private,
 			userId : currentUserId,
-			projectDetail : {}
+			projectDetail : ""
 		}
 		return project
 	}
@@ -203,16 +247,16 @@ export const App: FunctionComponent = () => {
 		document.body.removeChild(a);
 	}
 
-	function exportSelect(codeGen : BaseGenerate){
+	function exportSelect(filename : string,codeGen : BaseGenerate){
 		let tbs = getAllTable(diagram)
 		//alert(JSON.stringify(tbs))
 		let str = codeGen.export(tbs)
 		alert(str)
 
-		downloadFile("ecom.sql" , str)
+		downloadFile(filename , str)
 	}
 
-	function exportSql(){exportSelect(new MySqlGenerate())}
+	function exportSql(filename : string){exportSelect(filename , new MySqlGenerate())}
 
 	function zoomIn() {diagram.doZoom(20)}
 
@@ -232,7 +276,7 @@ export const App: FunctionComponent = () => {
 				exportPng={exportPng} exportPdf={exportPng} exportSql={exportSql} fileName={currentProject.projectName}
 			/>
 			<input type="file" id="fileinput" style={{ display: "none" }} onChange={onLoadFile}/>
-			<FileMenu isOpen={true}/>
+			<FileMenu isOpen={toggleFileMenu} onLogin={onLogin} onclose={() => settoggleFileMenu(!toggleFileMenu)} />
 			<TableEditor isOpen={isEdit} diagramctr={diagram} 
 			onclose={ToggleEditor} forceUpdate={update}/>
 

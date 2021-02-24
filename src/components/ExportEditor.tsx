@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useState } from 'react'
+import React, { FunctionComponent, useEffect, useState } from 'react'
 import Drawer from '@material-ui/core/Drawer';
 
 import styled from '@emotion/styled';
@@ -54,16 +54,16 @@ font-size : 20px;
 
 
 
-export const SqlExport: FunctionComponent<ExportSqlProp> = ({ code, fileName, isRender, onDownloadClick }) => {
+export const SqlExport: FunctionComponent<ExportSqlProp> = ({ code, fileName, isRender, onDownloadClick , onInputChange }) => {
   if (!isRender) {
     return (<div></div>)
   } else {
     return (
       <div>
         <div>Export sql</div>
-        <TextField label="file name" variant="filled" value={fileName} />
+        <TextField label="file name" variant="filled" value={fileName} onChange={onInputChange} />
         <TextField label="Filled" variant="filled" multiline
-          rowsMax={20} style={{ marginTop: 20, width: "100%", height: 400 }} value={code} />
+          rowsMax={20} style={{ marginTop: 20, width: "100%", height: 400 }} value={code}  />
         <Button variant="outlined" color="primary" style={{ marginRight: 10 }}>Copy</Button>
         <Button variant="contained" color="primary" onClick={onDownloadClick} >Download</Button>
       </div>
@@ -71,14 +71,14 @@ export const SqlExport: FunctionComponent<ExportSqlProp> = ({ code, fileName, is
   }
 }
 
-export const ImageExport: FunctionComponent<ExportImageProp> = ({ fileName, isRender, imageType, onDownloadClick }) => {
+export const ImageExport: FunctionComponent<ExportImageProp> = ({ fileName, isRender, imageType, onDownloadClick , onInputChange }) => {
   if (!isRender) {
     return (<div></div>)
   } else {
     return (
       <div>
         <div>Export Image</div>
-        <TextField label="file name" variant="filled" value={fileName} />
+        <TextField label="file name" variant="filled" value={fileName} onChange={onInputChange} />
 
         <Button variant="contained" color="primary" onClick={onDownloadClick}  >Download</Button>
       </div>
@@ -99,22 +99,23 @@ interface ExportProp {
   isOpen: boolean,
   fileName : string,
   onclose: () => void,
-  exportPng: () => void,
-  exportPdf: () => void,
-  exportSql: () => void,
+  exportPng: (filename : string) => void,
+  exportPdf: (filename : string) => void,
+  exportSql: (filename : string) => void,
   exportTest : (a : string) => void
 }
 
 interface ExportEvent {
   onclose: () => void,
   exportPng: () => void,
-  exportPdf: () => void,
-  exportSql: () => void
+  exportPdf: (filename : string) => void,
+  exportSql: (filename : string) => void
 }
 
 interface MenuExport {
   isRender: boolean,
   fileName: string,
+  onInputChange : (e : any) => void,
   onDownloadClick: () => void
 }
 
@@ -131,6 +132,23 @@ export const ExportEditor: FunctionComponent<ExportProp> = ({ isOpen, onclose, e
   const [currentMenu, setcurrentMenu] = useState(MenuEnum.Image)
 
   const [currentFileName, setcurrentFileName] = useState("")
+
+  useEffect(() => {
+    if(isOpen === false){
+      setcurrentFileName(fileName)
+    }
+    
+  }, [fileName])
+
+  const handleFileNameInput = (e : any) => setcurrentFileName(e.target.value)
+
+  const onExportSql = () => {
+    exportSql(currentFileName + ".sql")
+  }
+
+  const onExportPng = () => {
+    exportPng(currentFileName + ".png")
+  }
 
   return (
 
@@ -156,8 +174,10 @@ export const ExportEditor: FunctionComponent<ExportProp> = ({ isOpen, onclose, e
           </MenuList>
         </LEFT>
         <Right>
-          <SqlExport isRender={currentMenu == MenuEnum.MySql} code={""} fileName={currentFileName} onDownloadClick={exportSql} />
-          <ImageExport isRender={currentMenu == MenuEnum.Image} imageType="png" fileName={currentFileName} onDownloadClick={exportPng} />
+          <SqlExport isRender={currentMenu == MenuEnum.MySql}
+          onInputChange={handleFileNameInput} code={""} fileName={currentFileName} onDownloadClick={onExportSql} />
+          <ImageExport isRender={currentMenu == MenuEnum.Image} 
+          onInputChange={handleFileNameInput} imageType="png" fileName={currentFileName} onDownloadClick={onExportPng} />
         </Right>
 
       </div>
