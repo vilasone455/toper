@@ -10,10 +10,20 @@ import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 import Cookies from 'js-cookie'
 
+import List from '@material-ui/core/List';
+import ListItem from '@material-ui/core/ListItem';
+import ListItemText from '@material-ui/core/ListItemText';
+import ListItemIcon from '@material-ui/core/ListItemIcon';
+import Avatar from '@material-ui/core/Avatar';
+import FolderIcon from '@material-ui/icons/Folder';
+import { Project } from '../interface/project';
+
 export interface TableEditorProp {
   isOpen: boolean,
+  isLogin : boolean,
   onclose : () => void,
-  onLogin : (userName : string , userPassword : string) => void
+  onLogin : (userName : string , userPassword : string) => void,
+  projects : Project[]
 }
 
 
@@ -61,6 +71,10 @@ interface LoginProp extends MenuProp{
   onUserName : (e : any) => void,
   onUserPassword : (e : any) => void,
   onLogin : (userName : string , userPassword : string) => void
+}
+
+interface FileListProp extends MenuProp{
+  projects : Project[]
 }
 
 export const LoginForm: FunctionComponent<LoginProp> = ({ isRender , userName , userPassword , onLogin , onUserName , onUserPassword }) => {
@@ -139,17 +153,33 @@ export const FileDetail: FunctionComponent<MenuProp> = ({ isRender  }) => {
   }
 }
 
-export const ListProject: FunctionComponent<MenuProp> = ({ isRender  }) => {
+export const ListProject: FunctionComponent<FileListProp> = ({ isRender , projects  }) => {
   if (!isRender) {
     return (<div></div>)
   } else {
     return (
       <div>
         <div>List</div>
-            <TextField label="Title" variant="filled" multiline style={{ marginTop: 20, width: "100%" }}
-              value={"E-commerce"}></TextField>
+            
+            <List dense={false}>
 
-            <div style={{ marginTop: 15 }}>Status Share</div>
+              {projects.map((p : Project) => {
+          
+                 <ListItem key={p.Id}>
+                  <ListItemIcon>
+                    <FolderIcon />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={p.ProjectName}
+                    secondary="2020-1-3"
+                  />
+                </ListItem>
+               
+              })}
+           
+                
+            
+            </List>
 
 
             <div style={{ marginTop: 15 }}>
@@ -170,7 +200,7 @@ enum MenuEnum {
   
 }
 
-export const FileMenu: FunctionComponent<TableEditorProp> = ({ isOpen , onLogin , onclose  }) => {
+export const FileMenu: FunctionComponent<TableEditorProp> = ({ isOpen , onLogin , onclose , isLogin , projects }) => {
 
   const [currentMenu, setcurrentMenu] = useState(MenuEnum.Account)
 
@@ -181,17 +211,6 @@ export const FileMenu: FunctionComponent<TableEditorProp> = ({ isOpen , onLogin 
   const onUserNameFunc = (e : any) => {setuserName(e.target.value)}
 
   const onUserPasswordFunc = (e : any) => {setuserPassword(e.target.value)}
-
-
-
-  function isLogin(){
-		let token = Cookies.get("ertoken")
-		if(token === undefined || token === "") {
-			//show login
-		}else{
-			
-		}
-	}
 
 
 
@@ -215,14 +234,14 @@ export const FileMenu: FunctionComponent<TableEditorProp> = ({ isOpen , onLogin 
         </LEFT>
         <Right>
 
-          <LoginForm isRender={true} userName={userName} userPassword={userPassword} 
+          <LoginForm isRender={isLogin===false} userName={userName} userPassword={userPassword} 
           onUserName={onUserNameFunc} onUserPassword={onUserPasswordFunc} onLogin={onLogin} />
 
-          <AccoutDetail isRender={currentMenu === MenuEnum.Account} />
+          <AccoutDetail isRender={currentMenu === MenuEnum.Account && isLogin} />
 
-          <FileDetail isRender={currentMenu === MenuEnum.FileSelect} /> 
+          <FileDetail isRender={currentMenu === MenuEnum.FileSelect && isLogin} /> 
           
-          <ListProject isRender={currentMenu === MenuEnum.ProjectList} />
+          <ListProject isRender={currentMenu === MenuEnum.ProjectList && isLogin} projects={projects} />
 
         </Right>
 

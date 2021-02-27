@@ -31,7 +31,9 @@ import Cookies from 'js-cookie'
 
 import axios from 'axios'
 
-import {User , defaultUser} from './interface/user'
+import {User , defaultUser , jsonToUser} from './interface/user'
+
+import {Project , defaultProjects , jsonToProject} from './interface/project'
 
 enum VisibleStatus {
 	Public,
@@ -39,17 +41,7 @@ enum VisibleStatus {
 	Protected
 }
 
-interface Project{
-	projectId ?: string,
-	projectName : string,
-	projectDescription : string,
-	createAt ?: string,
-	updateAt ?: string,
-	visibleStatus : VisibleStatus,
-	shareUrl ?: string  ,
-	userId : string,
-	projectDetail : any
-}
+
 
 export const App: FunctionComponent = () => {
 
@@ -57,11 +49,13 @@ export const App: FunctionComponent = () => {
 
 	const [update, setupdate] = useState(false)
 
+	const [isLogin, setisLogin] = useState(true)
+
 	const [diagram, setDiagram] = useState(new DiagramController())
 
 	const [toggleFileMenu, settoggleFileMenu] = useState(true)
 
-	const [currentUserId, setcurrentUserId] = useState("")
+	const [projectList, setprojectList] = useState(defaultProjects())
 
 	const [currentProject, setcurrentProject] = useState(initProject())
 
@@ -75,39 +69,79 @@ export const App: FunctionComponent = () => {
 		diagram.getEngine().registerListener({
 			onDoubleClick: () => ToggleEditor()
 		})
-		isLogin()
+		isLogger()
 	}, [])
 
-	function isLogin(){
+	
+
+	function isLogger(){
+	
 		let token = Cookies.get("ertoken")
 		if(token === undefined || token === "") {
-			//show login
+			setisLogin(false)
+			settoggleFileMenu(true)
 		}else{
-			
+			alert("set token")
+			axios.defaults.headers.common['Authorization'] = "Bearer " + token
+			loaduserAndProject()
 		}
 	}
 
+	const loaduserAndProject = () => {
+		let baseUrl = "https://toperbackend.herokuapp.com/"
+		let userApi = "user/getuser"
+		let projectApi = "project/getprojects"
+
+		axios.all([
+			axios.get(baseUrl + userApi), 
+			axios.get(baseUrl + projectApi)
+		  ])
+		  .then(axios.spread((data1, data2) => {
+			alert("fetch success")
+			if(data1.data.length > 0){
+				let userrs = data1.data[0]
+				
+				setuser(user)
+
+			}
+
+			let projects : Project[] = []
+
+			data2.data.forEach((projectrs : any) =>{
+				const project : Project = jsonToProject(projectrs)
+				projects.push(project)
+			})
+
+			setprojectList(projects)
+
+			console.log(projectList)
+			
+			
+		  }));
+	}
+
+	const onLogOut = () => {
+		Cookies.set("ertoken" , "")
+		isLogger()
+	}
+
 	const onLogin = (userName : string , userPassword : string) => {
-		let url = "localhost:8080/auth/login"
-		alert('on login' + userName + userPassword)
-		/*
+		let url = "https://toperbackend.herokuapp.com/auth/login"
+	
 		axios.post(url , {userName , userPassword}).then(rs=>{
 			if(rs.status == 200){
+		
 				if(rs.data.access_token !== ""){
+					alert('login success')
 					let data = rs.data
-					let userdata : User = {
-						Id : data.id,
-						UserName : data.userName,
-						UserLastName : data.userLastname,
-						UserEmail : data.userEmail,
-						UserPassword : userPassword
-					}
+					let userdata : User = jsonToUser(data)
+					setisLogin(true)
 					setuser(userdata)
 					Cookies.set("ertoken" , rs.data.access_token)
 				}
 			}
 		})
-		*/
+		
 	}
 
 	function exportPng(filename : string) {
@@ -131,12 +165,14 @@ export const App: FunctionComponent = () => {
 	function initProject() : Project{
 		let pid = uuidv4()
 		let project : Project = {
-			projectId : pid,
-			projectName : "Project",
-			projectDescription : "",
-			visibleStatus : VisibleStatus.Private,
-			userId : currentUserId,
-			projectDetail : ""
+			Id : pid,
+			ProjectName : "Project",
+			ProjectDescription : "",
+			ProjectDetail : "",
+			VisibleStatus : VisibleStatus.Private,
+			UserId : user.Id,
+			ShareUrl : ""
+			
 		}
 		return project
 	}
@@ -163,11 +199,13 @@ export const App: FunctionComponent = () => {
 
 		//new code
 		let rs : Project = {
-			projectName : "topss",
-			projectDescription : "......",
-			visibleStatus : VisibleStatus.Private,
-			userId : "",
-			projectDetail : modelJson
+			Id : "",
+			ProjectName : currentProject.ProjectName,
+			ProjectDescription : currentProject.ProjectDescription,
+			VisibleStatus : currentProject.VisibleStatus,
+			ShareUrl : "",
+			UserId : currentProject.UserId,
+			ProjectDetail : modelStr
 		}
 
 		setsaveData(modelStr)
@@ -176,7 +214,7 @@ export const App: FunctionComponent = () => {
 
 		downloadFile("someer.er" , modelStr)
 		//new code
-		downloadFile(rs.projectName + ".er" , JSON.stringify(rs))
+		downloadFile(rs.ProjectName + ".er" , JSON.stringify(rs))
 	}
 
 
@@ -269,16 +307,17 @@ export const App: FunctionComponent = () => {
 
 			<AppToolbar onExport={openExport}/>
 			<Toolbar onZoomIn={zoomIn}
-				onZoomOut={zoomOut} onZoomFit={loadOpenFile} newTable={newTable} onSave={saveSerial} 
-				onLoad={loadOpenFile} />
+			onZoomOut={zoomOut} onZoomFit={loadOpenFile} newTable={newTable} onSave={saveSerial} 
+			onLoad={loadOpenFile} />
 			<ExportEditor 
 				isOpen={isExportOpen} onclose={() => setisExportOpen(false)} exportTest={testEx}
-				exportPng={exportPng} exportPdf={exportPng} exportSql={exportSql} fileName={currentProject.projectName}
+				exportPng={exportPng} exportPdf={exportPng} exportSql={exportSql} fileName={currentProject.ProjectName}
 			/>
 			<input type="file" id="fileinput" style={{ display: "none" }} onChange={onLoadFile}/>
-			<FileMenu isOpen={toggleFileMenu} onLogin={onLogin} onclose={() => settoggleFileMenu(!toggleFileMenu)} />
+			<FileMenu isOpen={toggleFileMenu} onLogin={onLogin} onclose={() => settoggleFileMenu(!toggleFileMenu)} 
+			isLogin={isLogin} projects={projectList} />
 			<TableEditor isOpen={isEdit} diagramctr={diagram} 
-			onclose={ToggleEditor} forceUpdate={update}/>
+			onclose={ToggleEditor} forceUpdate={update} />
 
 			<MenuProvider id="diagram" storeRef={false} >
 				<DemoCanvasWidget background="#E9E9E9" color="#808080" >

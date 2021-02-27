@@ -96,6 +96,44 @@ export class DiagramController {
     return rs
   }
 
+  getAllTable(): TableData[] {
+    let rs: TableData[] = []
+    let alltb = this.getEngine().getModel().getNodes() as SchemaNodeModel[]
+    alltb.forEach(tb => {
+      let name = tb.getOptions().name
+      if (name == undefined) name = ""
+      let add: TableData = {
+        id: tb.getID(),
+        tablename: name,
+        fields: tb.getAllField()
+      }
+      rs.push(add)
+    });
+    return rs
+  }
+
+  getCurrentTable() : TableData{
+    let rs: TableData = {
+      id: "",
+      tablename: '',
+      fields: []
+    }
+    let node = this.currentNode()
+
+    if (node == undefined) return rs
+
+    if (node instanceof SchemaNodeModel) {
+      let nodedata = node as SchemaNodeModel
+      let tbname = nodedata.getOptions().name
+      if (tbname === undefined) tbname = ""
+      rs.tablename = tbname
+      rs.id = nodedata.getID()
+      rs.fields = nodedata.getAllField()
+    }
+
+    return rs
+  }
+
   linktest() {
     this.linkNode()
   }

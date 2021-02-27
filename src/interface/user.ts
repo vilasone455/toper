@@ -16,3 +16,14 @@ export function defaultUser() : User{
     }
     return rs
 }
+
+export function jsonToUser(d : any) : User{
+    const rs : User = {
+        Id : d._id,
+        UserName : d.userName,
+        UserLastName : d.userlastname,
+        UserEmail : d.userEmail,
+        UserPassword : d.userPassword
+    }
+    return rs
+}
