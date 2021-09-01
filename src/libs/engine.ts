@@ -4,6 +4,9 @@ import createEngine, { DefaultLinkModel, DefaultNodeModel , DiagramEngine,  Diag
 import {SchemaNodeModel} from '../schemanode/node/SchemaNodeModel'
 import {SchemaNodeFactory} from '../schemanode/node/SchemaNodeFactory'
 
+import { SchemaPortFactory } from "../schemanode/port/SchemaPortFactory";
+
+
 
 function GetEngine() : DiagramEngine  {
  
@@ -11,42 +14,11 @@ function GetEngine() : DiagramEngine  {
 })
 
     rs.getNodeFactories().registerFactory(new SchemaNodeFactory());
+	rs.getPortFactories().registerFactory(new SchemaPortFactory())
 
 
     const model = new DiagramModel();
 
-
-    let snode =  new SchemaNodeModel({
-		name: 'Product',
-		color: 'rgb(0,192,255)'
-	});
-
-    let productIdPort = snode.addField({fieldName : "Id" , fieldType : "int"})
-    snode.addField({fieldName : "ProductName" , fieldType : "varchar"})
-    let pnameport = snode.addField({fieldName : "ProductPrice" , fieldType : "int"})
-    snode.addField({fieldName : "ProductCategory" , fieldType : "int"})
-
-    snode.setPosition(100, 100);
-
-
-
-
-    const models = model.addAll(snode);
-
-    //snode2.addLinkForeignKey(link1.getID())
-    
-    models.forEach(m => {
-        m.registerListener({
-            
-			selectionChanged: () => onclick(m.getID()),
-            onDoubleClick : () => ondbclick(m.getID())
-		});
-
-    });
-
-    
-
-	
 
     /*
     var node1 = new DefaultNodeModel({
@@ -69,25 +41,12 @@ function GetEngine() : DiagramEngine  {
 	link1.addLabel('Hello World!');
     */
     
-
     rs.setModel(model);
 
-   
     return rs
 }
 
-function ondbclick(id : string){
-    alert('double')
-}
 
-function onclick(id : String){
-    //alert(id)
-    //const dispatch = useDispatch()
-    //dispatch(ToggleEditor())
-    //store.dispatch(ToggleEditor())
-    console.log(id)
-   
-}
 
 const engine = GetEngine()
 export {engine , GetEngine}

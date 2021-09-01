@@ -5,9 +5,9 @@ import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
 import IconButton from '@material-ui/core/IconButton';
-import MenuIcon from '@material-ui/icons/Menu';
-
+import SwapVertIcon from '@material-ui/icons/SwapVert';
 import DeleteOutlineIcon from '@material-ui/icons/DeleteOutline';
+import { MenuButton } from './MenuButton';
 
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
@@ -36,10 +36,12 @@ const useStyles = makeStyles((theme: Theme) =>
 interface AppbarProp {
   title : string,
   onDelete : () => void,
-  onEndEdit : (e : string) => void
+  onEndEdit : (e : string) => void,
+  tables : any[],
+  onSelectTable : (id:string) => void
 }
 
-export const  Appbar : FunctionComponent<AppbarProp> = ({ onDelete , title , onEndEdit }) => {
+export const  Appbar : FunctionComponent<AppbarProp> = ({onSelectTable,  onDelete , title , onEndEdit, tables }) => {
   const classes = useStyles();
 
   const [isEdit, setisEdit] = useState(false)
@@ -63,16 +65,21 @@ export const  Appbar : FunctionComponent<AppbarProp> = ({ onDelete , title , onE
     settextInput(title)
   }
 
+  function onSendSelectEvent(id:string){
+    onSelectTable(id)
+  }
+
   return (
     <div className={classes.root}>
-      <AppBar position="static" elevation={0}>
+      <AppBar position="static" elevation={0} >
         <Toolbar>
           <IconButton edge="start" className={classes.menuButton} color="inherit" aria-label="menu">
-            <MenuIcon />
+            <MenuButton menuName="" isEnable={true} items={tables} onClickMenu={onSendSelectEvent}>
+              <SwapVertIcon/>
+            </MenuButton>
           </IconButton>
           {(isEdit) ? 
            <input value={textInput} onChange={handleChange} onBlur={ handleBlur} className={classes.inputEdit} />
-         
           :
           <Typography  variant="h6" className={classes.title} onClick={handleOpenEdit}>
             {title}

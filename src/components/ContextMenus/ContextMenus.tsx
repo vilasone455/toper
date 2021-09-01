@@ -8,12 +8,13 @@ import {AllContextFunction} from './FunctionList'
 
 
 
-export const ContextMenus: FunctionComponent<AllContextFunction> = ({copyFunc , deleteFunc , duplicateFunc , cutFunc , pasteFunc , zoomIn , zoomOut} ) => {
+export const ContextMenus: FunctionComponent<AllContextFunction> = ({undoFunc , redoFunc ,copyFunc , 
+  deleteFunc , duplicateFunc , cutFunc , pasteFunc , zoomIn , zoomOut} ) => {
 
   return (
     <>
-    <DiagramContextMenu  pasteFunc={pasteFunc} zoomIn={zoomIn} zoomOut={zoomOut}  />
-    <ComponentContextMenu  copyFunc={copyFunc} pasteFunc={pasteFunc} 
+    <DiagramContextMenu  pasteFunc={pasteFunc} zoomIn={zoomIn} zoomOut={zoomOut} undoFunc={undoFunc} redoFunc={redoFunc}  />
+    <ComponentContextMenu  copyFunc={copyFunc} pasteFunc={pasteFunc} undoFunc={undoFunc} redoFunc={redoFunc}
     deleteFunc={deleteFunc} duplicateFunc={duplicateFunc} cutFunc={cutFunc} zoomIn={zoomIn} zoomOut={zoomOut} />
   </>
   );

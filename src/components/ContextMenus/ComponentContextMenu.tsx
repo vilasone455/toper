@@ -19,7 +19,8 @@ import ContextMenuIconContainer from './ContextMenuIconContainer';
 import ContextMenuShortcutContainer from './ContextMenuShortcutContainer';
 import {ComponentFunction} from './FunctionList'
 
-  export const ComponentContextMenu : FunctionComponent<ComponentFunction> = ({copyFunc , pasteFunc , deleteFunc , duplicateFunc , cutFunc , zoomIn , zoomOut} ) => (
+  export const ComponentContextMenu : FunctionComponent<ComponentFunction> = ({copyFunc , pasteFunc , 
+    deleteFunc , duplicateFunc , cutFunc , zoomIn , zoomOut , undoFunc , redoFunc} ) => (
   <Menu id="component">
     <Item onClick={duplicateFunc}>
       <ContextMenuIconContainer>
@@ -93,7 +94,7 @@ import {ComponentFunction} from './FunctionList'
 
     <Separator />
 
-    <Item onClick={pasteFunc}>
+    <Item onClick={undoFunc}>
       <ContextMenuIconContainer>
         <Undo />
       </ContextMenuIconContainer>
@@ -104,7 +105,7 @@ import {ComponentFunction} from './FunctionList'
       </ContextMenuShortcutContainer>
     </Item>
 
-    <Item onClick={pasteFunc}>
+    <Item onClick={redoFunc}>
       <ContextMenuIconContainer>
         <Redo />
       </ContextMenuIconContainer>

@@ -7,11 +7,22 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+a { color: inherit; text-decoration: none;} 
+
 .diagram-container{
 	background: #333333;
 	width: 100%;
 	height: 100%;
 }
+
+.topitem
+{ 
+  color : "white" ;
+  text-transform : "capitalize" ;
+  margin-right : 25 ; 
+  cursor: "pointer";
+}
+
 
 
 
@@ -24,7 +35,7 @@ body {
 .canvas {
   width: 100%;
 
-  height: 83vh;
+  height: 92.5vh;
 }
 
 code {

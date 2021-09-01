@@ -2,9 +2,10 @@ import * as _ from 'lodash';
 import { NodeModel, NodeModelGenerics, PortModel, PortModelAlignment } from '@projectstorm/react-diagrams-core';
 import { SchemaPortModel } from '../port/SchemaPortModel';
 import { BasePositionModelOptions, DeserializeEvent } from '@projectstorm/react-canvas-core';
-import { DefaultLinkModel, DefaultPortModel, DiagramEngine, LinkModel } from '@projectstorm/react-diagrams';
+import { DefaultLinkModel, DefaultPortModel, DiagramEngine, LinkModel, PathFindingLinkFactory } from '@projectstorm/react-diagrams';
 import { TableData  } from '../../components/TableEditor';
 import { v4 as uuidv4 } from 'uuid';
+
 export interface DefaultNodeModelOptions extends BasePositionModelOptions {
 	name?: string;
 	color?: string;
@@ -23,8 +24,30 @@ export interface FieldOption {
 	ai ?: boolean
 	pk ?: boolean,
 	fk ?: boolean,
+	notnull ?: boolean,
+	defaultVal ?: string,
 	fkTb ?: string,
-	fkField ?: string
+	fkField ?: string,
+	faker ?: string
+}
+
+export enum OptionEnum {
+	pk = "pk",
+	notnull = "notnull",
+	fk = "fk",
+	ai = "ai",
+	defaultVal = "defaultVal",
+	faker = "faker"
+}
+
+export type OptionList =  {
+	name : "pk" | "fk" | "ai" | "defaultVal" | "faker",
+}
+
+export type fieldOptionSchema = {
+	name : OptionEnum,
+	value : any,
+	type : any
 }
 
 export interface SchemaNodeModelGenerics extends NodeModelGenerics {
@@ -32,8 +55,8 @@ export interface SchemaNodeModelGenerics extends NodeModelGenerics {
 }
 
 export class SchemaNodeModel extends NodeModel<SchemaNodeModelGenerics> {
-	protected portsIn: DefaultPortModel[];
-	protected portsOut: DefaultPortModel[];
+	protected portsIn: SchemaPortModel[];
+	protected portsOut: SchemaPortModel[];
 	protected fieldOptions : FieldOption[]	
 
 	constructor(name: string, color: string);
@@ -86,7 +109,7 @@ export class SchemaNodeModel extends NodeModel<SchemaNodeModelGenerics> {
 		this.removeField(indexof)
 	}
 
-	removePort(port: DefaultPortModel): void {
+	removePort(port: SchemaPortModel): void {
 		super.removePort(port);
 	
 		if (port.getOptions().in) {
@@ -112,7 +135,7 @@ export class SchemaNodeModel extends NodeModel<SchemaNodeModelGenerics> {
 	}
 
 
-	addField(field : Field) : DefaultPortModel[] {
+	addField(field : Field) : SchemaPortModel[] {
 		
 		let portin = this.addInPort(field.fieldName)
 		let portout = this.addOutPort(field.fieldType)
@@ -166,20 +189,14 @@ export class SchemaNodeModel extends NodeModel<SchemaNodeModelGenerics> {
 		//this.linkForeignKey(targetNodeId , targetPortId ,  sourceIdPort)
 	}
 
-	linkForeignKey(targetNode : SchemaNodeModel ,targetIdPort : string , sourceInIdPort : string): LinkModel | undefined{
-		alert('do link')
-		let targetPort = targetNode.getPortFromID(targetIdPort) as DefaultPortModel
-		let sourceport = this.getPortFromID(sourceInIdPort)  as DefaultPortModel  // find  sourePort
-		if(sourceport === null) return undefined
-		if(targetPort === null) return undefined
-		alert('complete link')
-		console.log("main field " + sourceport.getOptions().label + " link with : " + targetPort.getOptions().label)
-		console.log(sourceport.getOptions().in)
-		console.log(targetPort.getOptions().in)
-		let link =  targetPort.link(sourceport)
+	linkForeignKey(targetPort : SchemaPortModel , sourcePort : SchemaPortModel , path : PathFindingLinkFactory): LinkModel | undefined{
+
+		console.log("main field " + sourcePort.getOptions().label + " link with : " + targetPort.getOptions().label)
+
+		let link =  targetPort.link(sourcePort )
 
 		targetPort.reportPosition()
-		sourceport.reportPosition()
+		sourcePort.reportPosition()
 		return link
 	}
 
@@ -187,15 +204,15 @@ export class SchemaNodeModel extends NodeModel<SchemaNodeModelGenerics> {
 		let portins = this.portsIn
 		let portouts = this.portsOut
 		let rs : Field[] = []
-		console.log("get field lenght : "+ portins.length)
+		//console.log("get field lenght : "+ portins.length)
 
-		console.log(this.fieldOptions)
+		//console.log(this.fieldOptions)
 
 		for (let i = 0; i < portins.length; i++) {
-			console.log("check field " + i )
+			//console.log("check field " + i )
 			
 			let f = this.getField(i)
-			console.log(f)
+			//console.log(f)
 			rs.push(f)
 		}
 		return rs
@@ -206,11 +223,11 @@ export class SchemaNodeModel extends NodeModel<SchemaNodeModelGenerics> {
 		let field = this.portsIn[index].getOptions().label
 		let type = this.portsOut[index].getOptions().label
 		let id = this.portsIn[index].getID()
-		console.log("check id : " + id)
+		//console.log("check id : " + id)
 		
 		let fieldOptionIndex = this.fieldOptions.findIndex(f=>f.portId === id)
 
-		console.log("fieldopt index : " + fieldOptionIndex)
+		//console.log("fieldopt index : " + fieldOptionIndex)
 
 		if(fieldOptionIndex === -1){
 			let r : Field = {
@@ -224,11 +241,10 @@ export class SchemaNodeModel extends NodeModel<SchemaNodeModelGenerics> {
 		}
 
 		let fieldOption = this.fieldOptions[fieldOptionIndex]
-		console.log("field name : " + field + " pk : " + fieldOption.pk + " fk : " + fieldOption.fk)
+		//console.log("field name : " + field + " pk : " + fieldOption.pk + " fk : " + fieldOption.fk)
 
 		if(field === undefined) field = ""
 		if(type === undefined) type = ""
-
 		
 		let rs : Field = {
 			inId : this.portsIn[index].getID(),
@@ -241,13 +257,7 @@ export class SchemaNodeModel extends NodeModel<SchemaNodeModelGenerics> {
 		return rs
 	}
 
-	updatePort(port: SchemaPortModel , index : number){
-		
-	}
-
-	addPort<T extends DefaultPortModel>(port: T): T {
-
-
+	addPort<T extends SchemaPortModel>(port: T): T {
 		super.addPort(port);
 		
 		if (port.getOptions().in) {
@@ -262,9 +272,55 @@ export class SchemaNodeModel extends NodeModel<SchemaNodeModelGenerics> {
 		return port;
 	}
 
-	addInPort(label: string, after = true): DefaultPortModel {
+	mirrorPort(port : SchemaPortModel){ // port in to port out || port out to port in
+		let portRs = (port.getOptions().in) ? this.getInPorts() : this.getOutPorts()
+		let index = portRs.findIndex(p=>p.getID() === port.getID())
+		console.log(index)
+		if(index === -1) return
+		return (port.getOptions().in) ? this.getOutPorts()[index] : this.getInPorts()[index]
+	}
+
+	portInIdtoPortOut(id : string) : SchemaPortModel {
+		const index =  this.getInPorts().findIndex(p=>p.getID() === id)
+	
+		return this.getPortOutByIndex(index)
+	}
+
+	getPortInByIndex(i:number){
+		return this.portsIn[i]
+	}
+
+	getPortOutByIndex(i:number){
+		return this.portsOut[i]
+	}
+
+
+	setNodeOption(id : string){
+
+		let port = this.getPortFromID(id) as SchemaPortModel
+		let isIn = port.getOptions().in
+
+		if(isIn === undefined) return
+
+		let index = -1
+
+		if(!isIn){
+			index = this.portsOut.findIndex(p=>p.getID() === id)
+			if(index === -1) return
+		}
+
+		let inId = (isIn) ? id : this.getPortInByIndex(index).getID()
+
+		let fieldIndex = this.fieldOptions.findIndex(f=>f.portId === inId)
+
+		if(fieldIndex === -1) return
+		this.fieldOptions[fieldIndex].fk = true
+		
+	}
+
+	addInPort(label: string, after = true): SchemaPortModel {
 		let uid = uuidv4()
-		const p = new DefaultPortModel({
+		const p = new SchemaPortModel({
 			in: true,
 			name: uid,
 			label: label,
@@ -276,9 +332,9 @@ export class SchemaNodeModel extends NodeModel<SchemaNodeModelGenerics> {
 		return this.addPort(p);
 	}
 
-	addOutPort(label: string, after = true): DefaultPortModel {
+	addOutPort(label: string, after = true): SchemaPortModel {
 		let uid = uuidv4()
-		const p = new DefaultPortModel({
+		const p = new SchemaPortModel({
 			in: false,
 			name: uid,
 			label: label,
@@ -290,60 +346,58 @@ export class SchemaNodeModel extends NodeModel<SchemaNodeModelGenerics> {
 		return this.addPort(p);
 	}
 
+	getOutIdFromInId(id : string){
+		let index  = this.getInPorts().findIndex(p=>p.getID() === id)
+		if(index === -1) return ""
+		return this.getOutPorts()[index].getID()
+	}
+
+	getInIdFromOutId(id : string){
+		let index  = this.getOutPorts().findIndex(p=>p.getID() === id)
+		if(index === -1) return ""
+		return this.getInPorts()[index].getID()
+	}
+
 	//when convert back to model it is no function to add field and add fieldoption : 
 	//fix you need 
-
-	deserialize(event: DeserializeEvent<this>) {
+ 
+	deserialize(event: DeserializeEvent<this>) {  // import
 		super.deserialize(event);
 
 		this.options.name = event.data.name;
 		this.options.color = event.data.color;
 		this.fieldOptions = event.data.fields
+
 		console.log(this.fieldOptions)
 		this.portsIn = _.map(event.data.portsInOrder, (id : any) => {
 			return this.getPortFromID(id);
-		}) as DefaultPortModel[];
+		}) as SchemaPortModel[];
 		this.portsOut = _.map(event.data.portsOutOrder, (id : any) => {
 			return this.getPortFromID(id);
-		}) as DefaultPortModel[];
-		console.log("deserial call on shemaModel")
-
-		console.log("after deserial")
+		}) as SchemaPortModel[];
 
 	}
 
-	deserializeFieldOption(){
-
-	}
-
-	serializeClone(c : any){
-		console.log('serial clone')
-		console.log(c)
-	}
-
-	serialize(): any {
-
-		console.log("call serialize on model")
+	serialize(): any { // export
 
 		let fields = []
-
-		console.log(this.fieldOptions)
 
 		for (let i = 0; i < this.portsIn.length; i++) {
 			
 			let fieldOptionIndex = this.fieldOptions.findIndex(f=>f.portId === this.portsIn[i].getID())
-			console.log("fieldOptIndex : " + fieldOptionIndex)
+			//console.log("fieldOptIndex : " + fieldOptionIndex)
 			if(fieldOptionIndex === -1) continue
 			fields.push({
 				portId : this.portsIn[i].getID(),
-				fieldName : this.portsIn[i].getOptions().label,
-				fieldType : this.portsOut[i].getOptions().label,
 				ai : this.fieldOptions[fieldOptionIndex].ai,
-				pk : this.fieldOptions[fieldOptionIndex].pk
+				pk : this.fieldOptions[fieldOptionIndex].pk,
+				fk : this.fieldOptions[fieldOptionIndex].fk,
+				notnull : this.fieldOptions[fieldOptionIndex].notnull,
+				defaultVal : this.fieldOptions[fieldOptionIndex].defaultVal,
+				faker : this.fieldOptions[fieldOptionIndex].faker
 			})
 			
 		}
-
 		
 		return {
 			...super.serialize(),
@@ -359,32 +413,11 @@ export class SchemaNodeModel extends NodeModel<SchemaNodeModelGenerics> {
 		};
 	}
 
-	toJson() : any{
-		
-		let fields = []
-		for (let i = 0; i < this.portsIn.length; i++) {
-			let fieldOptionIndex = this.fieldOptions.findIndex(f=>f.portId === this.portsIn[i].getID())
-			if(fieldOptionIndex === -1) continue
-			let field = {
-				fieldName : this.portsIn[i].getOptions().label,
-				fieldType : this.portsOut[i].getOptions().label,
-				fieldOption : this.fieldOptions[fieldOptionIndex]
-			}
-			fields.push(field)
-		}
-		let rs = {
-			name : this.options.name,
-			color : this.options.color,
-			fields : fields
-		}
-		return rs
-	}
-
-	getInPorts(): DefaultPortModel[] {
+	getInPorts(): SchemaPortModel[] {
 		return this.portsIn;
 	}
 
-	getOutPorts(): DefaultPortModel[] {
+	getOutPorts(): SchemaPortModel[] {
 		return this.portsOut;
 	}
 

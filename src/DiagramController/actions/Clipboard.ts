@@ -2,7 +2,7 @@ import { Action, InputType , DeserializeEvent } from '@projectstorm/react-canvas
 
 import {BaseModel} from '@projectstorm/react-canvas-core';
 import { DiagramModel, NodeModel } from '@projectstorm/react-diagrams';
-import Base from 'antd/lib/typography/Base';
+
 import { SchemaNodeModel } from '../../schemanode/node/SchemaNodeModel';
 
 

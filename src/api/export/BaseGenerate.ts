@@ -8,8 +8,8 @@ class BaseGenerate {
         return ``
     }
 
-    export(data : any[]) : any {
-    
+    export(data : any[] , relationData : any[]) : any {
+        
       return ''
     }
 }

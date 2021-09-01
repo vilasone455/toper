@@ -12,21 +12,27 @@ import TableRow from '@material-ui/core/TableRow';
 import IconButton from '@material-ui/core/IconButton';
 
 import { BaseModel } from '@projectstorm/react-canvas-core'
-
-
+import CreateIcon from '@material-ui/icons/Create';
+import SaveAltIcon from '@material-ui/icons/SaveAlt';
 import TextField from '@material-ui/core/TextField';
 
 import AddCircleOutlineIcon from '@material-ui/icons/AddCircleOutline';
-import { DiagramEngine, NodeModel } from '@projectstorm/react-diagrams';
-import { SchemaNodeModel, Field } from '../schemanode/node/SchemaNodeModel';
+import { DefaultPortModel, DiagramEngine, NodeModel, PathFindingLinkFactory } from '@projectstorm/react-diagrams';
+import { SchemaNodeModel, Field, fieldOptionSchema, OptionList, OptionEnum } from '../schemanode/node/SchemaNodeModel';
 import { DiagramController } from '../DiagramController/DiagramCtr';
 import DeleteOutlineIcon from '@material-ui/icons/DeleteOutline';
+
+import { Box, Collapse, MenuItem, Select, Typography , FormControl, withStyles } from '@material-ui/core';
+import { SchemaPortModel } from '../schemanode/port/SchemaPortModel';
+import { FakerList } from '../data/faker';
+import { SeedGeneratorModal } from './modal/SeedGeneratorModal';
+
 
 export interface TableProps {
   isOpen: boolean,
   diagramctr: DiagramController,
   forceUpdate: boolean,
-  onclose: () => void
+  onclose: () => void,
 }
 
 export interface TableData {
@@ -36,6 +42,9 @@ export interface TableData {
 }
 
 
+
+
+
 const useStyles = makeStyles((theme: Theme) =>
   createStyles({
     styledTable: {
@@ -43,20 +52,58 @@ const useStyles = makeStyles((theme: Theme) =>
       "margin": "25px 0", "fontSize": "0.9em", "fontFamily": "sans-serif",
       "minWidth": "400px", "boxShadow": "0 0 20px rgba(0, 0, 0, 0.15)"
     },
+
     cell: {
-      padding: 10
+      border : "1px solid grey",
+      padding: 8,
+      
+    },
+    selectOption : {
+      height: 28,
+      marginTop:10
+    },
+    smallbtn : {
+      width:20,
+      height:20
+    },
+    smallInput : {
+      height: 12
     }
 
   }),
 );
 
+const Row = withStyles(theme => ({
+  root: {
+
+  }
+}))(TableRow);
+
+const Cell = withStyles(theme => ({
+  root: {
+    
+    padding:7
+  }
+}))(TableCell);
+
+enum testEnum  {
+  pk = "pk",
+  un = "un",
+  fk = "fk",
+  ai = "ai",
+  defaultVal = "defaultVar"
+}
+
 
 export const TableEditor: FunctionComponent<TableProps> = ({ isOpen, diagramctr, onclose, forceUpdate }) => {
 
-
   const classes = useStyles();
 
+  const [isOptionEdit, setisOptionEdit] = useState("")
+
   const [currentTable, setTable] = useState(getNodeData(diagramctr))
+
+  const [relationName, setrelationName] = useState("")
 
   const [otherTable, setotherTable] = useState(getOtherTable())
 
@@ -77,64 +124,79 @@ export const TableEditor: FunctionComponent<TableProps> = ({ isOpen, diagramctr,
 
   const [typeSelect, settypeSelect] = useState("")
 
+  const [seedModal, setseedModal] = useState(false)
+
   useEffect(() => {
+		window.addEventListener('keydown', shortcutHandler);
+  }, [])
+
+  useEffect(() => {
+
+    console.log('re render')
     setTable(getNodeData(diagramctr))
-    console.log('update tb')
+    setotherTable(getOtherTable())
+    
+		window.addEventListener('keydown', shortcutHandler);
   }, [isOpen, toggleUpdate, forceUpdate])
 
-  function getOtherTable(): TableData[] {
+  const shortcutHandler = (event:any) => {
+		const { ctrlKey, shiftKey, code } = event;
+		if (code === 'Enter') {
+		  event.preventDefault();
+		  //alert('enter key')
 
+      closeEdit()
+      
+		}
+	}
 
-    let rs: TableData[] = []
-    let alltb = diagramctr.getEngine().getModel().getNodes() as SchemaNodeModel[]
-    alltb.forEach(tb => {
-      let name = tb.getOptions().name
-      if (name == undefined) name = ""
-      let add: TableData = {
-        id: tb.getID(),
-        tablename: name,
-        fields: tb.getAllField()
-      }
-      rs.push(add)
-    });
-    return rs
+  function onBeforeClose(){
+    setcurrentSelectTableId("")
+    setcurrentFieldId("")
+    setcurrentEdit("")
+    setisEdit(false)
+    onclose()
+    
   }
 
+  function getOtherTable(): TableData[] { return diagramctr.allTable() }
 
-  function getNodeData(diagramctr: DiagramController): TableData {
-    let rs: TableData = {
-      id: "",
-      tablename: '',
-      fields: []
-    }
-    let node = diagramctr.currentNode()
+  function getNodeData(diagramctr: DiagramController) { return diagramctr.currentTable() }
 
-    if (node == undefined) return rs
-
-    if (node instanceof SchemaNodeModel) {
-      console.log("Start getNodeData function")
-      let nodedata = node as SchemaNodeModel
-      let tbname = nodedata.getOptions().name
-      if (tbname === undefined) tbname = ""
-      rs.tablename = tbname
-      rs.id = nodedata.getID()
-      rs.fields = getFieldsData(nodedata)
-    }
-
-    return rs
-  }
-
-  function getFieldsData(node: SchemaNodeModel): Field[] {
-    let fieldlist = node.getAllField()
-    console.log("get all fields")
-    console.log(fieldlist)
-    return fieldlist
-  }
-
-  function setEditField(id: string, fieldName: string) {
+  function setEditField(id: string | undefined, fieldName: string) {
+    if (id === undefined) id = ""
     setisEdit(true)
     settextInput(fieldName)
     setcurrentEdit(id)
+    let node = diagramctr.currentNode()
+    if(node === undefined) return
+
+    let inId = id
+    let outId = node.getOutIdFromInId(inId)
+
+    let portSelectIn = node.getPortFromID(inId) as SchemaPortModel
+    let portSelectOut = node.getPortFromID(outId) as SchemaPortModel
+
+    let linkIn = diagramctr.findSourcesLinkInPort(portSelectIn)
+
+    let linkOut = diagramctr.findSourcesLinkInPort(portSelectOut)
+
+    if(linkIn.length > 0 ){
+      const targetPort = linkIn[0].getTargetPort() as SchemaPortModel
+      setcurrentSelectTableId(targetPort.getNode().getID())
+      let targetNode = targetPort.getNode() as SchemaNodeModel
+      setcurrentFieldId(targetNode.getInIdFromOutId(targetPort.getID()))
+      return
+    }
+
+    if(linkOut.length > 0){ 
+      const targetPort = linkOut[0].getTargetPort() as SchemaPortModel
+      setcurrentSelectTableId(targetPort.getNode().getID())
+      setcurrentFieldId(targetPort.getID())
+      return
+    }
+
+
   }
 
   function closeEdit() {
@@ -146,16 +208,68 @@ export const TableEditor: FunctionComponent<TableProps> = ({ isOpen, diagramctr,
   function updateNode() {
     let newtb = currentTable
 
-    let indexof = newtb.fields.findIndex(f => f.fieldName == currentEdit)
+    //let indexof = newtb.fields.findIndex(f => f.fieldName == currentEdit)
+
+    let indexof = newtb.fields.findIndex(f => f.inId == currentEdit)
 
     if (indexof == -1) return
 
     newtb.fields[indexof].fieldName = textInput
 
+    
+    let tbname = isVaildAutoLinkRule(textInput)
+    if(tbname !== undefined){
+      for (let i = 0; i < otherTable.length; i++) {
+        const tb = otherTable[i];
+ 
+        if(tb.tablename === tbname){
+          let connectb = otherTable.find(t=>t.tablename === tbname)
+          if(connectb === undefined) continue
+          let targetPortId = connectb.fields[0].inId 
+          alert(connectb.fields[0].fieldName)
+          if(targetPortId === undefined) targetPortId = ""
+          let connectid = connectb.id
+          if(connectid === undefined) connectid = ""
+          let targetPortParamter : any = {
+            target : {value : targetPortId , targetNodeId : connectid}
+          }
+          let connectNodeId = connectb.id
+          if(connectNodeId !== undefined){
+            onChangeFieldSelect(targetPortParamter , connectNodeId)
+            targetPortParamter.value = ""
+            let fieldOption = newtb.fields[indexof].fieldOption
+            if(fieldOption !== undefined){
+              fieldOption.fk = true
+            }
+          }
+          
+ 
+          break
+        }
+      }
+      
+    }
+    
+
     if (typeSelect != "") newtb.fields[indexof].fieldType = typeSelect
     setTable(newtb)
 
     diagramctr.updateNode(newtb)
+  }
+
+  function isVaildAutoLinkRule(text:string){
+    const regex = /(\S+)_id/g;
+    let m = regex.exec(text)
+    while (m !== null) {
+    if (m.index === regex.lastIndex) {
+        regex.lastIndex++;
+    }
+
+    let tb_name = m[1]
+    return tb_name
+
+    }
+    return undefined
   }
 
   function handleChange(e: any) {
@@ -172,6 +286,8 @@ export const TableEditor: FunctionComponent<TableProps> = ({ isOpen, diagramctr,
     diagramctr.deleteSelected()
     onclose()
   }
+
+
 
   function newField() {
     let node = diagramctr.currentNode()
@@ -210,39 +326,37 @@ export const TableEditor: FunctionComponent<TableProps> = ({ isOpen, diagramctr,
     return tb.fields
   }
 
-  function onChangeFieldSelect(e: any) {
-    let targetPortOutId = e.target.value
-    let sourceField = currentTable.fields.find(f => f.fieldName == currentEdit)
-
-    setcurrentFieldId(targetPortOutId)
-
-    let currentTableId = (currentTable.id == undefined) ? "" : currentTable.id == undefined
-    if (currentTableId == currentSelectTableId || sourceField == undefined) return // if link self table and selt field
-    alert('on link')
-
-    let sourceFieldId = (sourceField.inId == undefined) ? "" : sourceField.inId
-    diagramctr.linkModel(currentSelectTableId, targetPortOutId, sourceFieldId)
-
-  }
-
-  function onSelectForeignKey() {
-    let node = diagramctr.currentNode() as SchemaNodeModel
-    if (node == undefined) return
-    let field = currentTable.fields.find(f => f.fieldName == currentEdit)
-
-    if (field == undefined) return
-
-    let portid = field.inId
-    if (portid == undefined) portid = ""
-
-    let option = {
-      portId: portid,
-      fkTb: currentSelectTableId,
-      fkField: currentFieldId
+  function onChangeFieldSelect(e: any , currentTargetNode? : string) {
+    if (e.target.value === "") {
+      return
     }
-    //node.addOrUpdateFieldOption(option)
-    diagramctr.getEngine().repaintCanvas()
+
+    let targetPortId = e.target.value
+    let sourceField = currentTable.fields.find(f => f.inId === currentEdit)
+
+    setcurrentFieldId(targetPortId)
+
+    const currentNode = diagramctr.currentNode()
+
+    if(currentNode === undefined) return
+
+    if (sourceField == undefined) return  // if link self table and selt field
+
+    alert(currentSelectTableId)
+
+
+    let targetNode = (currentTargetNode === undefined) ? diagramctr.getNodeById(currentSelectTableId) : diagramctr.getNodeById(currentTargetNode)
+
+    const dir = diagramctr.direactionNode(currentNode , targetNode)
+
+    const sourcePort = (dir === "front") ? currentNode.portInIdtoPortOut(currentEdit) : currentNode.getPortFromID(currentEdit) as SchemaPortModel
+
+    const targetPort = (dir === "front") ? targetNode.getPortFromID(targetPortId) as SchemaPortModel : targetNode.portInIdtoPortOut(targetPortId)
+    //before link must remove link from source port :: INCOMPLETE TODO
+    diagramctr.linkModel(sourcePort, targetPort)
+
   }
+
 
   function onNameChange(e: string) {
     let newtb = currentTable
@@ -253,36 +367,91 @@ export const TableEditor: FunctionComponent<TableProps> = ({ isOpen, diagramctr,
 
     settoggleUpdate(!toggleUpdate)
 
-
   }
 
   function getFieldOption(f: Field, optionName: string): any {
     let fieldOption = f.fieldOption
     if (fieldOption == undefined) {
-      console.log('field option undifine')
       return false
     }
     if (optionName == "pk") return fieldOption.pk
     if (optionName == "fk") return fieldOption.fk
+    if (optionName == "ai") return fieldOption.ai
 
   }
 
-  function setFieldOption(e: any, idField: string | undefined, optionName: string) {
+  function getOption(f: Field, opt : OptionEnum) : any{
+    let fieldOption = f.fieldOption
+    if (fieldOption == undefined) {
+      return false
+    }
+
+    return fieldOption[opt]
+  }
+
+  function setField(e: {target: fieldOptionSchema} , idField: string | undefined){
+    if (idField == undefined) return
+    let newtb = {...currentTable}
+    let fieldIndexof = newtb.fields.findIndex(f => f.inId == idField)
+    let fieldopt = newtb.fields[fieldIndexof].fieldOption
+    if(fieldopt === undefined) return
+    let type = e.target.type
+    console.log(type)
+    if(type === "checkbox"){
+      let val = !fieldopt[e.target.name] as any
+      fieldopt[e.target.name]  = val
+    }else if(type === "text"){
+      fieldopt[e.target.name] = e.target.value
+    }
+
+    setTable(newtb)
+
+  }
+
+  function getFieldOptionById(idField : string){
+    //let fieldIndexof = newtb.fields.findIndex(f => f.inId == idField)
+    //let fieldOpt = newtb.fields[fieldIndexof].fieldOption
+    //if(fieldOpt === undefined) return
+  }
+
+  function onFakerValueChange(e : any , idField: string | undefined){
+    if (idField == undefined) return
+    let newtb = {...currentTable}
+    let fieldIndexof = newtb.fields.findIndex(f => f.inId == idField)
+    let fieldOpt = newtb.fields[fieldIndexof].fieldOption
+    if(fieldOpt === undefined) return
+    console.log(e.target.value)
+    fieldOpt.faker = e.target.value
+    setTable(newtb)
+  }
+
+  function setFieldOption(e : any, idField: string | undefined, optionName: string) {
+
+    const val = e.target.value
 
     if (idField == undefined) return
 
-    console.log(optionName)
-
     let fieldIndexof = currentTable.fields.findIndex(f => f.inId == idField)
+
     let tb = currentTable
     let newfieldOption = tb.fields[fieldIndexof].fieldOption
-    if (newfieldOption == undefined) return
 
-    if (optionName == "pk") {
+    if (fieldIndexof === -1 || newfieldOption === undefined) return
+
+    if (optionName === "pk") {
       newfieldOption.pk = !newfieldOption.pk
     }
-    if (optionName == "fk") {
+    if(optionName === "ai"){
+      newfieldOption.ai = !newfieldOption.ai
+    }
+    if (optionName === "fk") {
       newfieldOption.fk = !newfieldOption.fk
+      if (newfieldOption.fk === false) {
+        const node = diagramctr.currentNode()
+        if (node === undefined) return
+        diagramctr.removeLinkbyPort(node.getPortInByIndex(fieldIndexof), node.getPortOutByIndex(fieldIndexof))
+      }
+
     }
 
     tb.fields[fieldIndexof].fieldOption = newfieldOption
@@ -293,74 +462,178 @@ export const TableEditor: FunctionComponent<TableProps> = ({ isOpen, diagramctr,
     settoggleUpdate(!toggleUpdate)
   }
 
-  return <Drawer anchor={"right"} open={isOpen} style={{ width: 600 }} onClose={onclose}>
+  function onSelectRelation(portid: string | undefined, portOutId: string | undefined, event: React.ChangeEvent<{ value: unknown }>) {
+    if (portid === undefined || portOutId === undefined) return
+    const node = diagramctr.currentNode()
+    if (node === undefined) return
+    const portIn = node.getPortFromID(portid) as SchemaPortModel
+    const portOut = node.getPortFromID(portOutId) as SchemaPortModel
+    if (portIn === null || portOut === null) return
+    setrelationName(event.target.value as string)
+    diagramctr.connectRealation(portIn, portOut, event.target.value as string)
+
+  }
+
+  function quickSwitch(id:string){
+    let currentnode = diagramctr.currentNode()
+    if(currentnode !== undefined) currentnode.setSelected(false)
+    let selectnode = diagramctr.findNodeById(id)
+    selectnode.setSelected(true)
+    console.log(selectnode.getOptions().name)
+    diagramctr.getEngine().repaintCanvas()
+    settoggleUpdate(!toggleUpdate)
+  }
+
+  function tableSelect(){
+    let rs = otherTable.map(t=>{
+      let add : any = {
+        id : t.id,
+        text : t.tablename
+      }
+      return add
+    })
+    return rs 
+  }
+
+  return <Drawer anchor={"right"} open={isOpen} style={{ width: 600 }} onClose={onBeforeClose}>
     <div>
-      <Appbar onDelete={onDelete} title={currentTable.tablename} onEndEdit={onNameChange}></Appbar>
+      
+      <Appbar onDelete={onDelete} title={currentTable.tablename} 
+      onEndEdit={onNameChange} onSelectTable={quickSwitch} tables={tableSelect()} />
+      
       <TableContainer>
-        <TableMat aria-label="simple table">
+      
+        <TableMat aria-label="simple table" >
           <TableHead>
             <TableRow>
-              <TableCell className={classes.cell}>Field Name</TableCell>
-              <TableCell className={classes.cell}>Type Name</TableCell>
-              <TableCell className={classes.cell}>PK</TableCell>
-              <TableCell className={classes.cell}>FK</TableCell>
-              <TableCell className={classes.cell}>Action</TableCell>
+           
+              <Cell ></Cell>
+              <Cell >Field Name</Cell>
+              <Cell >Type Name</Cell>
+              <Cell >PK</Cell>
+              <Cell >AI</Cell>
+              <Cell >NN</Cell>
+              <Cell >Action</Cell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {currentTable.fields.map((row: Field, index: number) => (
-              <TableRow key={row.fieldName} className={classes.cell}>
-                {(isEdit && currentEdit == row.fieldName) ?
-                  <>
-                    <TableCell component="th" scope="row" className={classes.cell}>
-                      <input onBlur={() => closeEdit()}
-                        onChange={handleChange} value={textInput} />
-                    </TableCell>
-                    <TableCell component="th" scope="row" className={classes.cell}>
-                      <select onChange={handleTypeChange} value={typeSelect} >
-                        <option value="int">Interger</option>
-                        <option value="varchar">Varchar</option>
-                        <option value="float">Float</option>
-                        <option value="bool">Boolean</option>
-                      </select>
-                    </TableCell>
-                    <TableCell component="th" scope="row" className={classes.cell}>
+            {currentTable.fields.map((row: Field) => (
+              <React.Fragment key={row.inId}>
 
-                      <select placeholder="Select Table" value={currentSelectTableId} onChange={onSelectTableChange}>
-                        {otherTable.map(o => <option key={o.id} value={o.id}>{o.tablename}</option>)}
-                      </select>
+                <Row>
+                  <Cell >
+                    <IconButton aria-label="expand row" size="small" >
+                      {(isEdit && currentEdit === row.inId) ? <SaveAltIcon className={classes.smallbtn} onClick={() => closeEdit()} /> : <CreateIcon className={classes.smallbtn} onClick={() => setEditField(row.inId, row.fieldName)} />}
+                    </IconButton>
+                  </Cell>
+                  {(isEdit && currentEdit == row.inId) ?
+                    <>
 
-                      <select placeholder="Select Field" value={currentFieldId} onChange={onChangeFieldSelect}>
-                        {currentField.map(f => <option key={f.fieldName} value={f.outId}>{f.fieldName}</option>)}
-                      </select>
-                    </TableCell>
-                  </>
-                  :
-                  <>
-                    <TableCell className={classes.cell} component="th" scope="row" onClick={() => setEditField(row.fieldName, row.fieldName)}>
-                      {row.fieldName}
-                    </TableCell>
+                      <Cell component="th" scope="row" >
+                        <input onBlur={() => closeEdit()}
+                          onChange={handleChange} value={textInput} />
+                      </Cell>
+                      <Cell component="th" scope="row" >
+                        <select onChange={handleTypeChange} value={typeSelect} >
+                          <option value="int">Interger</option>
+                          <option value="varchar">Varchar</option>
+                          <option value="float">Float</option>
+                          <option value="date">Date</option>
+                          <option value="bool">Boolean</option>
+                        </select>
+                      </Cell>
 
-                    <TableCell className={classes.cell} component="th" scope="row" onClick={() => setEditField(row.fieldName, row.fieldName)}>
-                      {row.fieldType}
-                    </TableCell>
-                  </>
-                }
+                    </>
+                    :
+                    <>
+                      <Cell  component="th" scope="row" onClick={() => setEditField(row.inId, row.fieldName)}>
+                        {row.fieldName}
+                      </Cell>
 
-                <TableCell className={classes.cell}>
-                  <input type="checkbox" checked={(getFieldOption(row, "pk"))}
-                    onChange={(e) => setFieldOption(e, row.inId, "pk")} key={`pk${row.inId}`} />
-                </TableCell>
-                <TableCell>
-                  <input type="checkbox" checked={(getFieldOption(row, "fk"))}
-                    onChange={(e) => setFieldOption(e, row.inId, "fk")} />
-                </TableCell>
-                <TableCell className={classes.cell} >
-                  <IconButton onClick={() => removeField(row.inId)} size="small">
-                    <DeleteOutlineIcon></DeleteOutlineIcon>
-                  </IconButton>
-                </TableCell>
-              </TableRow>
+                      <Cell component="th" scope="row" onClick={() => setEditField(row.inId, row.fieldName)}>
+                        {row.fieldType}
+                      </Cell>
+                    </>
+                  }
+
+                  <Cell >
+                    <input type="checkbox" checked={(getOption(row, OptionEnum.pk))}
+                      onChange={(e) => setFieldOption(e, row.inId, "pk")} key={`pk${row.inId}`} />
+                  </Cell>
+                  <Cell >
+                    <input type="checkbox" checked={(getOption(row, OptionEnum.ai))} onChange={(e) => setFieldOption(e, row.inId, "ai")} key={`ai${row.inId}`} />
+                  </Cell>
+                  <Cell >
+                    <input type="checkbox" name={OptionEnum.notnull} checked={(getOption(row, OptionEnum.notnull))} 
+                    onChange={(e:any) => setField(e,row.inId) } key={`nn${row.inId}`}   />
+                  </Cell>
+                  <Cell  >
+                    <IconButton onClick={() => removeField(row.inId)} size="small">
+                      <DeleteOutlineIcon className={classes.smallbtn}></DeleteOutlineIcon>
+                    </IconButton>
+                  </Cell>
+                </Row>
+                <TableRow>
+                  <Cell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+                    <Collapse in={(isEdit && currentEdit === row.inId)} timeout="auto" unmountOnExit>
+                      <Box margin={1} display="flex" flexDirection="column"> 
+
+                      <Select displayEmpty  name="faker" onChange={(e:any) => onFakerValueChange(e ,row.inId)}
+                        value={(getOption(row , OptionEnum.faker))} 
+                        className={classes.selectOption} variant="outlined">
+                          {FakerList.map((f:any) =>{
+                            return (<option key={`faker${f.text}`} value={f.value}>{f.text}</option>)
+                          })}
+                      </Select>
+
+
+                        <TextField key={`defaultinput${row.inId}`} label="Default Value" name="defaultVal" onChange={(e) => setField(e as any,row.inId)}
+                        value={(getOption(row , OptionEnum.defaultVal))} InputProps={{ classes: { input: classes.smallInput } }} variant="outlined" size="small"/>
+
+                        <Cell>
+                          <input type="checkbox" checked={(getFieldOption(row, "fk"))}
+                            onChange={(e) => setFieldOption(e, row.inId, "fk")} />
+                        </Cell>
+                        {(getFieldOption(row, "fk")) ? <React.Fragment >
+
+                        <FormControl variant="outlined" size="small"  >
+
+                        <Select className={classes.selectOption} displayEmpty variant="outlined"  value={currentSelectTableId} onChange={onSelectTableChange}>
+                            <MenuItem value="" > -- Select Ref Table -- </MenuItem>
+                            {otherTable.map(tb => {
+                              const ele = currentTable.id !== tb.id ?
+                                <MenuItem key={"option-" + tb.id} value={tb.id}>{tb.tablename}</MenuItem> : ""
+                              return ele
+                            })}
+                          </Select>
+
+                          <Select className={classes.selectOption} displayEmpty style={{ minWidth: 100 }} 
+                          value={currentFieldId} onChange={e => onChangeFieldSelect(e)}>
+
+                            <MenuItem style={{ display: "none" }} value=""></MenuItem>
+                            {currentField.map(f => <option key={f.fieldName} value={f.inId}>{f.fieldName}</option>)}
+                          </Select>
+
+                          <Select className={classes.selectOption} displayEmpty value={relationName} onChange={(e) => onSelectRelation(row.inId, row.outId, e)}>
+                            <MenuItem value="1:1">One to One</MenuItem>
+                            <MenuItem value="1:N">One to Many</MenuItem>
+                          </Select>
+
+                        </FormControl>
+
+                          
+
+                        </React.Fragment>
+                          : ""}
+
+
+                      </Box>
+                    </Collapse>
+                  </Cell>
+                </TableRow>
+
+              </React.Fragment>
+
             ))}
           </TableBody>
         </TableMat>

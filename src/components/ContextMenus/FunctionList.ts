@@ -1,8 +1,8 @@
 export interface ContextFunction {
     zoomIn : () => void,
     zoomOut : () => void,
-    redoFunc ?: () => void,
-    undoFunc ?: () => void,
+    redoFunc : () => void,
+    undoFunc : () => void,
     pasteFunc : () => void
 }
 
